@@ -1,0 +1,2157 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>校園藝術探索家：實景解謎大冒險 v1.6.0</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font Awesome Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- QRCode.js CDN for dynamic iPad QR Code generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  
+  <!-- Canvas Confetti for victory celebration -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  
+  <!-- Tone.js for high-quality, lightweight in-browser game audio effects -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+  <!-- Google Font: Noto Sans TC & Fredoka -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;600;700;900&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Noto Sans TC"', 'system-ui', 'sans-serif'],
+            fun: ['Fredoka', '"Noto Sans TC"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              teal: '#0D9488',
+              sky: '#0284C7',
+              amber: '#F59E0B',
+              coral: '#F43F5E',
+              emerald: '#10B981',
+              indigo: '#6366F1',
+              dark: '#1E293B',
+              cream: '#FDFBF7'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    @keyframes svg-pulse-wave {
+      0% { r: 16px; opacity: 0.95; stroke-width: 4px; }
+      65% { r: 40px; opacity: 0.15; stroke-width: 1px; }
+      100% { r: 40px; opacity: 0; stroke-width: 0px; }
+    }
+    .active-pin-pulse {
+      animation: svg-pulse-wave 2s ease-out infinite;
+      transform-origin: center;
+    }
+
+    @keyframes gentle-bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+    .animate-float {
+      animation: gentle-bounce 3s ease-in-out infinite;
+    }
+  </style>
+</head>
+
+<body class="bg-[#F8FAFC] text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-teal-500 selection:text-white">
+  
+  <!-- Top Bar: Title, Version Badge, and Icon-only Action Buttons -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm px-4 py-2.5 sm:px-6">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
+      
+      <!-- Brand & Version (Title + v1.4.0) -->
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-400 text-white flex items-center justify-center shadow-md shadow-teal-500/20 shrink-0">
+          <i class="fa-solid fa-compass-drafting text-xl"></i>
+        </div>
+        <div class="flex items-center gap-2 truncate">
+          <h1 class="text-xl sm:text-2xl font-black tracking-tight text-slate-900 truncate">
+            校園藝術探索家
+          </h1>
+          <!-- Version Badge: Bumped to v1.6.0 -->
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200 shrink-0 shadow-xs">
+            v1.6.0
+          </span>
+        </div>
+      </div>
+
+      <!-- Right Navigation Actions: Strictly icon-only with detailed hover/touch tooltips -->
+      <!-- Sequence strictly: ① QR Code -> ② Fullscreen Toggle -> ③ Curriculum Guide -->
+      <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+        
+        <!-- Button 1: QR Code Scanner & Share [QR Icon] -->
+        <div class="relative group">
+          <button id="btn-qrcode" 
+                  aria-label="QR Code 掃碼分享" 
+                  class="w-12 h-12 rounded-2xl bg-slate-100 hover:bg-teal-50 active:bg-teal-100 text-slate-700 hover:text-teal-600 border border-slate-200 flex items-center justify-center transition-all shadow-sm active:scale-95 cursor-pointer">
+            <i class="fa-solid fa-qrcode text-xl"></i>
+          </button>
+          <div class="pointer-events-none absolute -bottom-10 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-slate-900 text-white text-xs font-semibold rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg z-50">
+            QR Code 掃碼連結
+            <div class="absolute -top-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-b-slate-900"></div>
+          </div>
+        </div>
+
+        <!-- Button 2: Fullscreen Toggle [Maximize Icon] -->
+        <div class="relative group">
+          <button id="btn-fullscreen" 
+                  aria-label="切換全螢幕模式" 
+                  class="w-12 h-12 rounded-2xl bg-slate-100 hover:bg-sky-50 active:bg-sky-100 text-slate-700 hover:text-sky-600 border border-slate-200 flex items-center justify-center transition-all shadow-sm active:scale-95 cursor-pointer">
+            <i id="fullscreen-icon" class="fa-solid fa-expand text-xl"></i>
+          </button>
+          <div class="pointer-events-none absolute -bottom-10 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-slate-900 text-white text-xs font-semibold rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg z-50">
+            切換全螢幕
+            <div class="absolute -top-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-b-slate-900"></div>
+          </div>
+        </div>
+
+        <!-- Button 3: Curriculum Guide [Book Icon] -->
+        <div class="relative group">
+          <button id="btn-curriculum" 
+                  aria-label="課程設計說明" 
+                  class="w-12 h-12 rounded-2xl bg-slate-100 hover:bg-amber-50 active:bg-amber-100 text-slate-700 hover:text-amber-600 border border-slate-200 flex items-center justify-center transition-all shadow-sm active:scale-95 cursor-pointer">
+            <i class="fa-solid fa-book-open text-xl"></i>
+          </button>
+          <div class="pointer-events-none absolute -bottom-10 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-slate-900 text-white text-xs font-semibold rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg z-50">
+            課程設計說明
+            <div class="absolute -top-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-b-slate-900"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 flex flex-col gap-4">
+    
+    <!-- Group Selector & Mission Progress Header -->
+    <section class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      
+      <!-- Group Choice -->
+      <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div class="flex items-center gap-2">
+          <span class="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm">
+            <i class="fa-solid fa-users"></i>
+          </span>
+          <span class="text-base sm:text-lg font-bold text-slate-800">
+            請選擇你的探險小組：
+          </span>
+        </div>
+        
+        <!-- Big touch buttons for 6 groups on iPad -->
+        <div class="grid grid-cols-6 gap-1.5 sm:gap-2 w-full sm:w-auto" id="group-buttons-container">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Current Group Routing & Progress Bar -->
+      <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-slate-50 rounded-2xl p-3 border border-slate-200/60 lg:min-w-[360px]">
+        <div class="flex-1 w-full">
+          <div class="flex justify-between items-center text-sm font-bold mb-1.5">
+            <span class="text-slate-600 flex items-center gap-1.5">
+              <i class="fa-solid fa-flag-checkered text-teal-600"></i>
+              小組進度
+            </span>
+            <span id="progress-text" class="text-teal-700 font-extrabold text-base">0 / 6 關卡</span>
+          </div>
+          <!-- Bar -->
+          <div class="w-full bg-slate-200 h-3 rounded-full overflow-hidden p-0.5">
+            <div id="progress-fill" class="bg-gradient-to-r from-teal-500 to-emerald-400 h-full rounded-full transition-all duration-500" style="width: 0%;"></div>
+          </div>
+        </div>
+        
+        <button id="btn-show-itinerary" class="w-full sm:w-auto px-3.5 py-2.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 active:scale-95 transition-all shadow-2xs whitespace-nowrap flex items-center justify-center gap-1.5 cursor-pointer">
+          <i class="fa-solid fa-route text-indigo-500"></i>
+          查看闖關路線
+        </button>
+      </div>
+
+    </section>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1">
+      
+      <!-- Interactive Campus Map -->
+      <div class="lg:col-span-8 bg-white rounded-3xl p-3 sm:p-4 border border-slate-200 shadow-sm flex flex-col">
+        
+        <!-- Map header -->
+        <div class="flex items-center justify-between mb-2 px-1">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+            <h2 class="text-base sm:text-lg font-bold text-slate-800 flex items-center gap-1.5">
+              <span>校園實景地圖</span>
+              <span class="text-xs font-normal text-slate-500">(點擊發光地標啟動任務)</span>
+            </h2>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg flex items-center gap-1">
+              <i class="fa-regular fa-hand-pointer text-teal-600"></i>
+              支援觸控點選
+            </span>
+          </div>
+        </div>
+
+        <!-- Campus Map Container -->
+        <div class="relative w-full aspect-[4/3] sm:aspect-[16/11] bg-[#F4EFE6] rounded-2xl overflow-hidden border-2 border-slate-200 shadow-inner flex items-center justify-center">
+          
+          <svg id="campus-svg" viewBox="0 0 1000 800" class="w-full h-full object-cover select-none">
+            <defs>
+              <pattern id="track-lines" width="10" height="2" patternUnits="userSpaceOnUse">
+                <line x1="0" y1="1" x2="10" y2="1" stroke="#ffffff" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.7"/>
+              </pattern>
+              <pattern id="solar-grid" width="14" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(-15)">
+                <rect width="14" height="9" fill="#254B8C" stroke="#7AA7E0" stroke-width="0.8"/>
+              </pattern>
+              <pattern id="grass-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+                <rect width="20" height="20" fill="#BFE3A4"/>
+                <circle cx="5" cy="5" r="1.5" fill="#A8D688" opacity="0.6"/>
+                <circle cx="15" cy="14" r="1.8" fill="#A8D688" opacity="0.6"/>
+              </pattern>
+              <filter id="building-shadow" x="-10%" y="-10%" width="130%" height="130%">
+                <feDropShadow dx="8" dy="12" stdDeviation="6" flood-color="#334155" flood-opacity="0.22" />
+              </filter>
+              <filter id="soft-glow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="4" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
+
+            <!-- Campus Ground Background -->
+            <rect width="1000" height="800" fill="#EAE5D9" />
+            
+            <!-- Campus Green Area Boundaries -->
+            <path d="M 280 40 L 680 50 L 670 240 L 480 230 L 450 310 L 260 300 Z" fill="url(#grass-pattern)" />
+            <path d="M 600 40 L 960 40 L 960 200 L 700 200 Z" fill="#D3E8B0" />
+
+            <!-- Blue Running Track & Basketball Courts -->
+            <g id="sports-zone" transform="translate(620, 130)">
+              <path d="M 40,70 L 220,70 A 70,70 0 0,1 290,140 L 290,360 A 70,70 0 0,1 220,430 L 40,430 A 70,70 0 0,1 -30,360 L -30,140 A 70,70 0 0,1 40,70 Z" 
+                    fill="#3B82F6" stroke="#2563EB" stroke-width="4" filter="url(#building-shadow)" />
+              <path d="M 40,85 L 220,85 A 55,55 0 0,1 275,140 L 275,360 A 55,55 0 0,1 220,415 L 40,415 A 55,55 0 0,1 -15,360 L -15,140 A 55,55 0 0,1 40,85 Z" 
+                    fill="none" stroke="#FFFFFF" stroke-width="1.8" opacity="0.9" />
+              <path d="M 40,100 L 220,100 A 40,40 0 0,1 260,140 L 260,360 A 40,40 0 0,1 220,400 L 40,400 A 40,40 0 0,1 0,360 L 0,140 A 40,40 0 0,1 40,100 Z" 
+                    fill="none" stroke="#FFFFFF" stroke-width="1.8" opacity="0.9" />
+              <rect x="25" y="115" width="210" height="270" rx="30" fill="#93C572" />
+              
+              <!-- Court 1 -->
+              <g transform="translate(45, 135)">
+                <rect width="80" height="110" rx="4" fill="#34D399" stroke="#F43F5E" stroke-width="2" />
+                <circle cx="40" cy="55" r="14" fill="none" stroke="#FFFFFF" stroke-width="1.5" />
+                <line x1="0" y1="55" x2="80" y2="55" stroke="#FFFFFF" stroke-width="1.5" />
+                <rect x="25" y="2" width="30" height="22" fill="#F87171" opacity="0.7"/>
+                <rect x="25" y="86" width="30" height="22" fill="#F87171" opacity="0.7"/>
+                <circle cx="40" cy="20" r="4" fill="#F59E0B" />
+                <circle cx="40" cy="90" r="4" fill="#F59E0B" />
+              </g>
+              <!-- Court 2 -->
+              <g transform="translate(135, 135)">
+                <rect width="80" height="110" rx="4" fill="#34D399" stroke="#F43F5E" stroke-width="2" />
+                <circle cx="40" cy="55" r="14" fill="none" stroke="#FFFFFF" stroke-width="1.5" />
+                <line x1="0" y1="55" x2="80" y2="55" stroke="#FFFFFF" stroke-width="1.5" />
+                <rect x="25" y="2" width="30" height="22" fill="#F87171" opacity="0.7"/>
+                <rect x="25" y="86" width="30" height="22" fill="#F87171" opacity="0.7"/>
+                <circle cx="40" cy="20" r="4" fill="#F59E0B" />
+                <circle cx="40" cy="90" r="4" fill="#F59E0B" />
+              </g>
+              <rect x="95" y="70" width="70" height="22" rx="11" fill="#FFFFFF" opacity="0.9"/>
+              <text x="130" y="86" font-size="13" font-weight="bold" fill="#1E3A8A" text-anchor="middle">操場</text>
+            </g>
+
+            <!-- North Ecological Walkway & Stone Path -->
+            <g id="north-eco-walkway">
+              <path d="M 360,70 Q 420,120 480,100 T 560,180 T 530,280" fill="none" stroke="#E2D4BC" stroke-width="26" stroke-linecap="round" />
+              <path d="M 360,70 Q 420,120 480,100 T 560,180 T 530,280" fill="none" stroke="#D1C0A5" stroke-width="2" stroke-dasharray="6,6" />
+              <ellipse cx="400" cy="140" rx="16" ry="11" fill="#94A3B8" stroke="#64748B" stroke-width="2"/>
+              <ellipse cx="430" cy="130" rx="10" ry="8" fill="#CBD5E1" stroke="#64748B" stroke-width="1.5"/>
+              <ellipse cx="580" cy="210" rx="18" ry="13" fill="#94A3B8" stroke="#64748B" stroke-width="2"/>
+              <ellipse cx="550" cy="300" rx="22" ry="14" fill="#64748B" stroke="#475569" stroke-width="2"/>
+              <circle cx="440" cy="170" r="4" fill="#FBBF24"/>
+              <circle cx="460" cy="220" r="4" fill="#FBBF24"/>
+              <circle cx="585" cy="245" r="4" fill="#FBBF24"/>
+              <rect x="475" y="155" width="85" height="24" rx="12" fill="#FFFFFF" opacity="0.9" />
+              <text x="517" y="172" font-size="13" font-weight="bold" fill="#365314" text-anchor="middle">綠地步道</text>
+            </g>
+
+            <!-- School Modern Buildings with Solar Panels -->
+            <g id="west-solar-building" filter="url(#building-shadow)">
+              <polygon points="180,260 340,300 300,480 140,430" fill="#E8DFD0" stroke="#C4B5A0" stroke-width="3" />
+              <polygon points="195,275 330,310 295,465 160,420" fill="url(#solar-grid)" stroke="#3B82F6" stroke-width="2" />
+            </g>
+
+            <!-- Central Teaching Wing & Outdoor Amphitheater -->
+            <g id="central-building" filter="url(#building-shadow)">
+              <polygon points="350,310 590,370 540,560 300,500" fill="#EBDDC8" stroke="#BFAF96" stroke-width="3"/>
+              <polygon points="365,325 570,375 540,425 335,370" fill="url(#solar-grid)" stroke="#3B82F6" stroke-width="2" />
+              <polygon points="310,460 520,510 495,570 285,520" fill="url(#solar-grid)" stroke="#3B82F6" stroke-width="2" />
+
+              <!-- Outdoor Amphitheater -->
+              <g id="theater-structure" transform="translate(430, 400)">
+                <path d="M -30,20 Q 40,70 110,40 L 95,95 Q 40,120 -15,75 Z" fill="#D97706" opacity="0.85" stroke="#B45309" stroke-width="2"/>
+                <path d="M -15,45 Q 40,85 95,60" fill="none" stroke="#FDE68A" stroke-width="2" stroke-dasharray="4,3"/>
+                <path d="M 0,0 Q 40,25 80,0 L 70,-20 Q 40,-5 10,-20 Z" fill="#EA580C" stroke="#C2410C" stroke-width="2"/>
+                <circle cx="10" cy="55" r="4.5" fill="#EF4444" />
+                <circle cx="28" cy="65" r="4.5" fill="#8B5CF6" />
+                <circle cx="48" cy="70" r="4.5" fill="#06B6D4" />
+                <circle cx="68" cy="62" r="4.5" fill="#F59E0B" />
+                <circle cx="20" cy="80" r="4.5" fill="#EC4899" />
+                <circle cx="40" cy="88" r="4.5" fill="#10B981" />
+                <circle cx="60" cy="82" r="4.5" fill="#3B82F6" />
+                <rect x="75" y="85" width="85" height="22" rx="11" fill="#FFFFFF" opacity="0.9" />
+                <text x="117" y="101" font-size="12" font-weight="bold" fill="#7C2D12" text-anchor="middle">戶外劇場</text>
+              </g>
+            </g>
+
+            <!-- Bottom Left Tech Building -->
+            <g id="southwest-solar-building" filter="url(#building-shadow)">
+              <polygon points="120,570 310,610 270,760 80,710" fill="#E8DFD0" stroke="#C4B5A0" stroke-width="3"/>
+              <polygon points="135,585 295,620 260,740 100,695" fill="url(#solar-grid)" stroke="#3B82F6" stroke-width="2"/>
+            </g>
+
+            <!-- Central Courtyard & Big Ancient Tree -->
+            <g id="courtyard-zone">
+              <polygon points="320,640 450,670 410,750 280,720" fill="#E2E8F0" stroke="#CBD5E1" stroke-width="2"/>
+              <line x1="330" y1="655" x2="430" y2="680" stroke="#FFFFFF" stroke-width="4"/>
+              <line x1="320" y1="680" x2="420" y2="705" stroke="#FFFFFF" stroke-width="4"/>
+              <line x1="310" y1="705" x2="410" y2="730" stroke="#FFFFFF" stroke-width="4"/>
+              <circle cx="360" cy="590" r="38" fill="#15803D" opacity="0.9"/>
+              <circle cx="410" cy="595" r="42" fill="#16A34A" opacity="0.95"/>
+              <circle cx="385" cy="625" r="35" fill="#22C55E"/>
+              <circle cx="340" cy="615" r="26" fill="#4ADE80" opacity="0.8"/>
+              <circle cx="415" cy="635" r="28" fill="#15803D" opacity="0.7"/>
+              <rect x="385" y="665" width="85" height="24" rx="12" fill="#FFFFFF" opacity="0.9" />
+              <text x="427" y="682" font-size="13" font-weight="bold" fill="#166534" text-anchor="middle">綠地步道</text>
+            </g>
+
+            <!-- South East Playground -->
+            <g id="southeast-playground">
+              <polygon points="500,560 740,620 700,710 460,650" fill="#E8DFD0" stroke="#C4B5A0" stroke-width="3" filter="url(#building-shadow)"/>
+              <polygon points="515,575 725,630 690,695 480,640" fill="url(#solar-grid)" stroke="#3B82F6" stroke-width="2"/>
+              <polygon points="410,720 680,780 650,840 380,780" fill="#E5D8C3" stroke="#BFAF96" stroke-width="3"/>
+              <polygon points="425,735 660,790 640,825 405,770" fill="url(#solar-grid)" stroke="#3B82F6" stroke-width="2"/>
+              <rect x="520" y="680" width="85" height="85" rx="10" fill="#38BDF8" opacity="0.4" stroke="#0284C7" stroke-width="2"/>
+              <rect x="530" y="700" width="65" height="55" rx="6" fill="#4ADE80" stroke="#16A34A" stroke-width="1.5"/>
+              <path d="M 545,670 C 565,660 575,690 555,705 C 540,715 560,735 580,720" fill="none" stroke="#F59E0B" stroke-width="9" stroke-linecap="round"/>
+              <path d="M 545,670 C 565,660 575,690 555,705 C 540,715 560,735 580,720" fill="none" stroke="#EF4444" stroke-width="4" stroke-linecap="round"/>
+              <circle cx="545" cy="670" r="7" fill="#3B82F6"/>
+              <rect x="620" y="675" width="22" height="20" rx="3" fill="#EC4899"/>
+              <rect x="645" y="685" width="24" height="18" rx="3" fill="#FBBF24"/>
+              <rect x="690" y="705" width="40" height="25" rx="4" fill="#34D399" stroke="#059669" stroke-width="1.5"/>
+            </g>
+
+            <!-- Tree Clusters -->
+            <g id="trees-northwest">
+              <circle cx="280" cy="180" r="28" fill="#15803D" opacity="0.85"/>
+              <circle cx="310" cy="160" r="32" fill="#22C55E"/>
+              <circle cx="340" cy="190" r="26" fill="#16A34A"/>
+              <circle cx="270" cy="220" r="30" fill="#4ADE80" opacity="0.8"/>
+              <circle cx="360" cy="230" r="34" fill="#15803D"/>
+            </g>
+            <g id="trees-north">
+              <circle cx="570" cy="110" r="36" fill="#16A34A"/>
+              <circle cx="620" cy="110" r="32" fill="#22C55E"/>
+              <circle cx="640" cy="140" r="30" fill="#15803D"/>
+              <circle cx="580" cy="60" r="28" fill="#4ADE80"/>
+            </g>
+            <g id="trees-track">
+              <circle cx="780" cy="210" r="28" fill="#22C55E"/>
+              <circle cx="810" cy="225" r="24" fill="#16A34A"/>
+              <circle cx="680" cy="510" r="35" fill="#15803D"/>
+              <circle cx="715" cy="525" r="38" fill="#22C55E"/>
+              <circle cx="730" cy="495" r="30" fill="#4ADE80"/>
+            </g>
+
+            <!-- Compass Rose -->
+            <g id="compass-rose" transform="translate(890, 80)">
+              <circle cx="0" cy="0" r="36" fill="#FDFBF7" stroke="#94A3B8" stroke-width="2" filter="url(#building-shadow)"/>
+              <polygon points="0,-32 7,-8 0,0" fill="#EF4444"/>
+              <polygon points="0,-32 -7,-8 0,0" fill="#B91C1C"/>
+              <polygon points="0,32 7,8 0,0" fill="#3B82F6"/>
+              <polygon points="0,32 -7,8 0,0" fill="#1D4ED8"/>
+              <polygon points="32,0 8,7 0,0" fill="#94A3B8"/>
+              <polygon points="32,0 8,-7 0,0" fill="#64748B"/>
+              <polygon points="-32,0 -8,7 0,0" fill="#94A3B8"/>
+              <polygon points="-32,0 -8,-7 0,0" fill="#64748B"/>
+              <circle cx="0" cy="0" r="4" fill="#F59E0B"/>
+              <text x="0" y="-36" font-size="14" font-weight="900" fill="#B91C1C" text-anchor="middle">N</text>
+              <text x="42" y="5" font-size="13" font-weight="bold" fill="#475569" text-anchor="middle">E</text>
+              <text x="0" y="47" font-size="13" font-weight="bold" fill="#1D4ED8" text-anchor="middle">S</text>
+              <text x="-42" y="5" font-size="13" font-weight="bold" fill="#475569" text-anchor="middle">W</text>
+            </g>
+
+            <!-- Bottom Right Map Legend Box -->
+            <g id="map-legend" transform="translate(800, 560)">
+              <rect width="180" height="220" rx="18" fill="#FDFBF7" stroke="#CBD5E1" stroke-width="3" filter="url(#building-shadow)"/>
+              
+              <!-- Legend item 1 -->
+              <g transform="translate(18, 25)">
+                <rect width="36" height="26" rx="4" fill="#34D399" stroke="#F43F5E" stroke-width="1.8"/>
+                <circle cx="18" cy="13" r="5" fill="none" stroke="#FFF" stroke-width="1.2"/>
+                <text x="50" y="19" font-size="14" font-weight="bold" fill="#334155">籃球場</text>
+              </g>
+              <!-- Legend item 2 -->
+              <g transform="translate(18, 75)">
+                <rect width="36" height="24" rx="5" fill="#3B82F6"/>
+                <line x1="4" y1="12" x2="32" y2="12" stroke="#FFFFFF" stroke-width="2" stroke-dasharray="3,2"/>
+                <text x="50" y="19" font-size="14" font-weight="bold" fill="#334155">操場</text>
+              </g>
+              <!-- Legend item 3 -->
+              <g transform="translate(18, 125)">
+                <rect width="36" height="26" rx="4" fill="#E8DFD0" stroke="#BFAF96" stroke-width="2"/>
+                <circle cx="28" cy="10" r="10" fill="#22C55E" opacity="0.8"/>
+                <text x="50" y="19" font-size="14" font-weight="bold" fill="#334155">教學樓</text>
+              </g>
+              <!-- Legend item 4 -->
+              <g transform="translate(18, 175)">
+                <rect width="36" height="26" rx="4" fill="url(#solar-grid)" stroke="#3B82F6" stroke-width="1.8"/>
+                <text x="50" y="19" font-size="14" font-weight="bold" fill="#334155">太陽能屋頂</text>
+              </g>
+            </g>
+
+            <!-- 6 INTERACTIVE SPOT PINS WITH EXTENDED HITBOXES -->
+            
+            <!-- SPOT 1: 戶外劇場 -->
+            <g id="pin-spot-1" class="cursor-pointer group" transform="translate(470, 435)" onclick="openSpotModal(1)">
+              <circle cx="0" cy="0" r="44" fill="transparent" />
+              <circle id="pin-pulse-1" cx="0" cy="-10" r="20" fill="none" stroke="#F59E0B" stroke-width="3" class="active-pin-pulse" />
+              <path id="pin-body-1" d="M 0,-34 C -16,-34 -26,-22 -26,-8 C -26,12 0,38 0,38 C 0,38 26,12 26,-8 C 26,-22 16,-34 0,-34 Z" 
+                    fill="#F59E0B" stroke="#FFFFFF" stroke-width="3" filter="url(#soft-glow)"/>
+              <circle cx="0" cy="-10" r="13" fill="#FFFFFF" />
+              <text id="pin-badge-1" x="0" y="-5" font-size="14" font-weight="900" fill="#B45309" text-anchor="middle">1</text>
+              <rect x="-45" y="-56" width="90" height="20" rx="6" fill="#1E293B" opacity="0.85" />
+              <text x="0" y="-42" font-size="11" font-weight="bold" fill="#FFFFFF" text-anchor="middle">戶外劇場</text>
+            </g>
+
+            <!-- SPOT 2: 操場與雙籃球場 -->
+            <g id="pin-spot-2" class="cursor-pointer group" transform="translate(740, 310)" onclick="openSpotModal(2)">
+              <circle cx="0" cy="0" r="44" fill="transparent" />
+              <circle id="pin-pulse-2" cx="0" cy="-10" r="20" fill="none" stroke="#3B82F6" stroke-width="3" class="hidden" />
+              <path id="pin-body-2" d="M 0,-34 C -16,-34 -26,-22 -26,-8 C -26,12 0,38 0,38 C 0,38 26,12 26,-8 C 26,-22 16,-34 0,-34 Z" 
+                    fill="#94A3B8" opacity="0.65" stroke="#FFFFFF" stroke-width="3" filter="url(#soft-glow)"/>
+              <circle cx="0" cy="-10" r="13" fill="#FFFFFF" />
+              <text id="pin-badge-2" x="0" y="-5" font-size="13" font-weight="900" fill="#64748B" text-anchor="middle">🔒</text>
+              <rect x="-45" y="-56" width="90" height="20" rx="6" fill="#1E293B" opacity="0.85" />
+              <text x="0" y="-42" font-size="11" font-weight="bold" fill="#FFFFFF" text-anchor="middle">操場與球場</text>
+            </g>
+
+            <!-- SPOT 3: 北側石徑生態步道 -->
+            <g id="pin-spot-3" class="cursor-pointer group" transform="translate(520, 185)" onclick="openSpotModal(3)">
+              <circle cx="0" cy="0" r="44" fill="transparent" />
+              <circle id="pin-pulse-3" cx="0" cy="-10" r="20" fill="none" stroke="#10B981" stroke-width="3" class="hidden" />
+              <path id="pin-body-3" d="M 0,-34 C -16,-34 -26,-22 -26,-8 C -26,12 0,38 0,38 C 0,38 26,12 26,-8 C 26,-22 16,-34 0,-34 Z" 
+                    fill="#94A3B8" opacity="0.65" stroke="#FFFFFF" stroke-width="3" filter="url(#soft-glow)"/>
+              <circle cx="0" cy="-10" r="13" fill="#FFFFFF" />
+              <text id="pin-badge-3" x="0" y="-5" font-size="13" font-weight="900" fill="#64748B" text-anchor="middle">🔒</text>
+              <rect x="-45" y="-56" width="90" height="20" rx="6" fill="#1E293B" opacity="0.85" />
+              <text x="0" y="-42" font-size="11" font-weight="bold" fill="#FFFFFF" text-anchor="middle">石徑生態步道</text>
+            </g>
+
+            <!-- SPOT 4: 太陽能現代教學大樓 -->
+            <g id="pin-spot-4" class="cursor-pointer group" transform="translate(235, 365)" onclick="openSpotModal(4)">
+              <circle cx="0" cy="0" r="44" fill="transparent" />
+              <circle id="pin-pulse-4" cx="0" cy="-10" r="20" fill="none" stroke="#6366F1" stroke-width="3" class="hidden" />
+              <path id="pin-body-4" d="M 0,-34 C -16,-34 -26,-22 -26,-8 C -26,12 0,38 0,38 C 0,38 26,12 26,-8 C 26,-22 16,-34 0,-34 Z" 
+                    fill="#94A3B8" opacity="0.65" stroke="#FFFFFF" stroke-width="3" filter="url(#soft-glow)"/>
+              <circle cx="0" cy="-10" r="13" fill="#FFFFFF" />
+              <text id="pin-badge-4" x="0" y="-5" font-size="13" font-weight="900" fill="#64748B" text-anchor="middle">🔒</text>
+              <rect x="-45" y="-56" width="90" height="20" rx="6" fill="#1E293B" opacity="0.85" />
+              <text x="0" y="-42" font-size="11" font-weight="bold" fill="#FFFFFF" text-anchor="middle">太陽能教學樓</text>
+            </g>
+
+            <!-- SPOT 5: 南側彩色兒童遊戲區 -->
+            <g id="pin-spot-5" class="cursor-pointer group" transform="translate(585, 715)" onclick="openSpotModal(5)">
+              <circle cx="0" cy="0" r="44" fill="transparent" />
+              <circle id="pin-pulse-5" cx="0" cy="-10" r="20" fill="none" stroke="#F43F5E" stroke-width="3" class="hidden" />
+              <path id="pin-body-5" d="M 0,-34 C -16,-34 -26,-22 -26,-8 C -26,12 0,38 0,38 C 0,38 26,12 26,-8 C 26,-22 16,-34 0,-34 Z" 
+                    fill="#94A3B8" opacity="0.65" stroke="#FFFFFF" stroke-width="3" filter="url(#soft-glow)"/>
+              <circle cx="0" cy="-10" r="13" fill="#FFFFFF" />
+              <text id="pin-badge-5" x="0" y="-5" font-size="13" font-weight="900" fill="#64748B" text-anchor="middle">🔒</text>
+              <rect x="-45" y="-56" width="90" height="20" rx="6" fill="#1E293B" opacity="0.85" />
+              <text x="0" y="-42" font-size="11" font-weight="bold" fill="#FFFFFF" text-anchor="middle">兒童遊戲區</text>
+            </g>
+
+            <!-- SPOT 6: 中庭老樹穿堂廊道 -->
+            <g id="pin-spot-6" class="cursor-pointer group" transform="translate(380, 595)" onclick="openSpotModal(6)">
+              <circle cx="0" cy="0" r="44" fill="transparent" />
+              <circle id="pin-pulse-6" cx="0" cy="-10" r="20" fill="none" stroke="#0D9488" stroke-width="3" class="hidden" />
+              <path id="pin-body-6" d="M 0,-34 C -16,-34 -26,-22 -26,-8 C -26,12 0,38 0,38 C 0,38 26,12 26,-8 C 26,-22 16,-34 0,-34 Z" 
+                    fill="#94A3B8" opacity="0.65" stroke="#FFFFFF" stroke-width="3" filter="url(#soft-glow)"/>
+              <circle cx="0" cy="-10" r="13" fill="#FFFFFF" />
+              <text id="pin-badge-6" x="0" y="-5" font-size="13" font-weight="900" fill="#64748B" text-anchor="middle">🔒</text>
+              <rect x="-45" y="-56" width="90" height="20" rx="6" fill="#1E293B" opacity="0.85" />
+              <text x="0" y="-42" font-size="11" font-weight="bold" fill="#FFFFFF" text-anchor="middle">中庭老樹廊道</text>
+            </g>
+
+          </svg>
+        </div>
+
+        <!-- Touch legend hint -->
+        <div class="mt-3 flex flex-wrap items-center justify-between text-xs text-slate-500 px-1 gap-2">
+          <div class="flex items-center gap-3 flex-wrap">
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-amber-500"></span>1. 戶外劇場</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-blue-500"></span>2. 操場球場</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500"></span>3. 生態步道</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-indigo-500"></span>4. 太陽能樓</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-rose-500"></span>5. 遊戲區</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-teal-600"></span>6. 中庭老樹</span>
+          </div>
+          <span class="text-teal-700 font-bold"><i class="fa-solid fa-location-dot"></i> 請依順序實地觀察解鎖</span>
+        </div>
+      </div>
+
+      <div class="lg:col-span-4 flex flex-col gap-4">
+        
+        <!-- Active Target Mission Card -->
+        <div id="target-mission-card" class="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between transition-all">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span id="target-status-pill" class="px-3 py-1 rounded-xl bg-teal-100 text-teal-800 font-extrabold text-xs tracking-wider uppercase flex items-center gap-1">
+                <i class="fa-solid fa-compass"></i>
+                <span id="target-status-label">本組當前推薦關卡</span>
+              </span>
+              <span id="current-step-indicator" class="text-xs font-bold text-slate-500">
+                第 1 / 6 站
+              </span>
+            </div>
+
+            <h3 id="target-spot-name" class="text-xl sm:text-2xl font-black text-slate-900 mb-2">
+              1. 戶外劇場
+            </h3>
+
+            <div id="target-art-theme-container" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold mb-3">
+              <i class="fa-solid fa-palette"></i>
+              <span id="target-art-theme">藝術主題：色彩冷暖與扇形向心視覺</span>
+            </div>
+
+            <p id="target-mission-prompt" class="text-slate-600 text-sm leading-relaxed mb-4">
+              請全組帶著 iPad 移動到戶外劇場看台最上方，實地觀察扇形舞台木質暖色與後方水泥冷灰建築的明暗對比！
+            </p>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <button id="btn-enter-spot" class="w-full py-4 rounded-2xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 active:scale-98 text-white font-extrabold text-lg shadow-lg shadow-teal-500/30 transition-all flex items-center justify-center gap-2 border-b-4 border-teal-700 cursor-pointer">
+              <i class="fa-solid fa-magnifying-glass-location"></i>
+              <span id="btn-enter-spot-label">進入現場解謎挑戰</span>
+            </button>
+            <button id="btn-reset-group" class="w-full py-2.5 text-xs font-bold text-slate-400 hover:text-rose-500 transition-colors flex items-center justify-center gap-1 cursor-pointer">
+              <i class="fa-solid fa-arrows-rotate"></i>
+              <span>重設本組挑戰進度</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 6 Art Badges Showcase -->
+        <div class="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm flex-1 flex flex-col">
+          <div class="flex items-center justify-between mb-3">
+            <h4 class="font-extrabold text-slate-800 text-base flex items-center gap-2">
+              <i class="fa-solid fa-award text-amber-500"></i>
+              已收集的美感榮譽徽章
+            </h4>
+            <span id="badges-count" class="text-xs font-bold text-slate-400">0 / 6</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2.5 flex-1 content-start" id="badges-container">
+            <!-- Populated by JS -->
+          </div>
+          
+          <div class="mt-3 text-center">
+            <p id="badges-footer-tip" class="text-xs text-slate-400">
+              點擊已解鎖徽章可溫故知新，集滿 6 關解鎖榮譽證書！
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Modal 1: Dynamic QR Code Modal -->
+  <div id="modal-qrcode" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden transition-opacity">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 flex flex-col items-center text-center relative animate-float">
+      
+      <button onclick="closeModal('modal-qrcode')" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center cursor-pointer">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+
+      <div class="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center text-2xl mb-3">
+        <i class="fa-solid fa-qrcode"></i>
+      </div>
+
+      <h3 class="text-xl font-black text-slate-900 mb-1">
+        iPad 掃碼立即探索
+      </h3>
+      <p class="text-sm text-slate-500 mb-4">
+        請學生開啟 iPad「相機」直接掃描，即可同步連線至本頁面！
+      </p>
+
+      <!-- Dynamic QR Code Target Container -->
+      <div class="p-4 bg-slate-50 rounded-2xl border-2 border-dashed border-teal-300 flex items-center justify-center mb-4">
+        <div id="qrcode-canvas" class="bg-white p-3 rounded-xl shadow-xs"></div>
+      </div>
+
+      <!-- Current Link Display -->
+      <div class="w-full bg-slate-100 rounded-xl p-2.5 text-xs text-slate-600 font-mono truncate mb-4 select-all text-left">
+        <span id="current-url-text">https://...</span>
+      </div>
+
+      <!-- One-Click Copy Button -->
+      <div class="w-full flex gap-2">
+        <button id="btn-copy-url" class="flex-1 py-3 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md shadow-teal-600/20 cursor-pointer">
+          <i class="fa-regular fa-clone"></i>
+          <span>一鍵複製網址</span>
+        </button>
+        <button onclick="closeModal('modal-qrcode')" class="py-3 px-4 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-sm transition-all cursor-pointer">
+          關閉
+        </button>
+      </div>
+
+      <div id="copy-toast" class="text-xs text-emerald-600 font-bold mt-2.5 hidden flex items-center gap-1">
+        <i class="fa-solid fa-circle-check"></i> 網址已成功複製到剪貼簿！
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal 2: Curriculum Design Guide -->
+  <div id="modal-curriculum" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 hidden">
+    <div class="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden">
+      
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <span class="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-lg">
+            <i class="fa-solid fa-book-open"></i>
+          </span>
+          <div>
+            <h3 class="text-xl font-black text-slate-900">課程設計說明</h3>
+            <p class="text-xs text-slate-500">國小高年級（五年級）藝術領域戶外實景探索教學模組</p>
+          </div>
+        </div>
+        <button onclick="closeModal('modal-curriculum')" class="w-10 h-10 rounded-full bg-white hover:bg-slate-200 border border-slate-200 text-slate-600 flex items-center justify-center cursor-pointer">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body (3 Required Categories) -->
+      <div class="p-6 overflow-y-auto space-y-6 text-slate-700 text-sm leading-relaxed">
+        
+        <!-- Category 1: 學習目標 -->
+        <section class="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-4 sm:p-5">
+          <h4 class="text-emerald-900 font-black text-base flex items-center gap-2 mb-3">
+            <i class="fa-solid fa-bullseye text-emerald-600 text-lg"></i>
+            一、學習目標（108課綱 藝術領域核心素養）
+          </h4>
+          <ul class="space-y-2 text-emerald-950 font-medium list-disc list-inside">
+            <li><strong class="text-emerald-800">美感感知（藝-E-A1）：</strong>走出教室觀察校園人造建築與自然地景中的點、線、面、色彩與空間層次。</li>
+            <li><strong class="text-emerald-800">形式探究（視 1-Ⅲ-1）：</strong>實地體察冷暖色調對比、流動線條的韻律節奏、天然有機形體與幾何秩序結構。</li>
+            <li><strong class="text-emerald-800">生活實踐（藝-E-B3）：</strong>透過小組合作實景解謎，提升同儕溝通與科技載具（iPad）數位探究的美育素養。</li>
+          </ul>
+        </section>
+
+        <!-- Category 2: 網頁操作說明 -->
+        <section class="bg-sky-50/70 border border-sky-200/80 rounded-2xl p-4 sm:p-5">
+          <h4 class="text-sky-900 font-black text-base flex items-center gap-2 mb-3">
+            <i class="fa-solid fa-tablet-screen-button text-sky-600 text-lg"></i>
+            二、網頁操作說明（專為 iPad 觸控體驗優化）
+          </h4>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="bg-white p-3 rounded-xl border border-sky-100 shadow-2xs">
+              <div class="font-bold text-sky-700 mb-1 flex items-center gap-1.5">
+                <span class="w-5 h-5 rounded-full bg-sky-200 text-sky-800 text-xs flex items-center justify-center font-bold">1</span>
+                選定小組路線
+              </div>
+              <p class="text-xs text-slate-600">各組點選上方「第 1~6 組」，系統自動分流導引至不同角落，避免同時擁擠。</p>
+            </div>
+            <div class="bg-white p-3 rounded-xl border border-sky-100 shadow-2xs">
+              <div class="font-bold text-sky-700 mb-1 flex items-center gap-1.5">
+                <span class="w-5 h-5 rounded-full bg-sky-200 text-sky-800 text-xs flex items-center justify-center font-bold">2</span>
+                依序實地觀察
+              </div>
+              <p class="text-xs text-slate-600">到達地點後點擊閃爍地標展開任務，依序完成 3 道實地觀察題方可過關。</p>
+            </div>
+            <div class="bg-white p-3 rounded-xl border border-sky-100 shadow-2xs">
+              <div class="font-bold text-sky-700 mb-1 flex items-center gap-1.5">
+                <span class="w-5 h-5 rounded-full bg-sky-200 text-sky-800 text-xs flex items-center justify-center font-bold">3</span>
+                珍惜 3 次機會
+              </div>
+              <p class="text-xs text-slate-600">每關設有 3 次生命值，全組務必核對實物再作答，通關即可解鎖大師證書！</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Category 3: 課堂提問建議 -->
+        <section class="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 sm:p-5">
+          <h4 class="text-amber-900 font-black text-base flex items-center gap-2 mb-3">
+            <i class="fa-solid fa-comments text-amber-600 text-lg"></i>
+            三、課堂提問與引導建議（教師現場帶領探究）
+          </h4>
+          <div class="space-y-2.5 text-xs sm:text-sm">
+            <div class="bg-white p-2.5 rounded-xl border border-amber-200">
+              <strong class="text-amber-800">1. 戶外劇場：</strong>「大家摸摸看舞台木質材質與牆壁水泥，陽光灑下來時，顏色和溫度帶給你什麼不同的感覺？」
+            </div>
+            <div class="bg-white p-2.5 rounded-xl border border-amber-200">
+              <strong class="text-amber-800">2. 操場與球場：</strong>「站在跑道起點往前望，那些圓弧的白線在視覺上是不是像在流動的水流或音符？」
+            </div>
+            <div class="bg-white p-2.5 rounded-xl border border-amber-200">
+              <strong class="text-amber-800">3. 石徑步道：</strong>「步道旁的石頭形狀各異，如果把它們畫下來，它會是尺量出來的直線還是大自然的曲線？」
+            </div>
+            <div class="bg-white p-2.5 rounded-xl border border-amber-200">
+              <strong class="text-amber-800">4. 太陽能建築：</strong>「仰望大樓屋頂方格，這種『重複且規律』的幾何排列，在生活中的哪些藝術作品也看得到？」
+            </div>
+            <div class="bg-white p-2.5 rounded-xl border border-amber-200">
+              <strong class="text-amber-800">5. 遊戲區：</strong>「這裡的遊具為什麼不用黑白灰色，而用鮮明紅黃藍？這對玩耍時的心情有何幫助？」
+            </div>
+            <div class="bg-white p-2.5 rounded-xl border border-amber-200">
+              <strong class="text-amber-800">6. 中庭老樹：</strong>「從穿堂廊道的柱子望出去看老樹，是不是就像一幅大自然框在畫框裡的風景畫？」
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+        <button onclick="closeModal('modal-curriculum')" class="px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-sm cursor-pointer">
+          了解，返回地圖
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal 3: Station Puzzle & Learning Challenge Modal -->
+  <div id="modal-puzzle" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 hidden">
+    <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden">
+      
+      <!-- Spot Header -->
+      <div id="puzzle-modal-header" class="px-6 py-4 bg-gradient-to-r from-teal-500 to-emerald-500 text-white flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span id="puzzle-spot-number" class="w-9 h-9 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-lg font-black">
+            1
+          </span>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 id="puzzle-spot-title" class="text-xl font-black">戶外劇場</h3>
+              <span id="puzzle-substep-badge" class="px-2 py-0.5 rounded-md bg-white/25 text-xs font-black">
+                第 1 / 3 題
+              </span>
+            </div>
+            <p id="puzzle-spot-sub" class="text-xs text-white/90 font-medium">主題：色彩冷暖與扇形向心視覺</p>
+          </div>
+        </div>
+        
+        <!-- 3 Lives Indicator -->
+        <div class="flex items-center gap-3">
+          <div class="bg-black/20 backdrop-blur px-3 py-1.5 rounded-xl flex items-center gap-1.5 border border-white/20 shadow-inner">
+            <span class="text-xs font-black text-white/90">挑戰機會:</span>
+            <div id="puzzle-lives-container" class="flex items-center text-sm tracking-widest text-rose-300">
+              ❤️❤️️❤️
+            </div>
+          </div>
+          <button onclick="closeModal('modal-puzzle')" class="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition-transform active:scale-95 cursor-pointer">
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Spot Body -->
+      <div class="p-6 overflow-y-auto space-y-5 text-slate-800 flex-1">
+        
+        <!-- Physical Observation Guidance -->
+        <div class="bg-amber-50 rounded-2xl p-4 border border-amber-200 flex gap-3.5 items-start">
+          <div class="w-10 h-10 rounded-xl bg-amber-400 text-white flex items-center justify-center text-xl shrink-0 mt-0.5">
+            <i class="fa-solid fa-binoculars"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <h4 class="font-extrabold text-amber-900 text-sm">【現場實地探查任務】</h4>
+              <span class="px-2 py-0.5 bg-amber-200/80 text-amber-900 text-[10px] font-black rounded-md">必須在現場觀察</span>
+            </div>
+            <p id="puzzle-observation-text" class="text-xs sm:text-sm text-amber-950 leading-relaxed font-medium">
+              請全體組員親自走到指定地點，依提示觀察現場真實物體的形狀、材質、色彩與空間排列！
+            </p>
+          </div>
+        </div>
+
+        <!-- Question Section -->
+        <div class="space-y-3">
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-md bg-teal-100 text-teal-800 text-xs font-black">實景觀察解謎題</span>
+            <span class="text-xs text-slate-400 font-semibold">核對現場實物特徵後作答</span>
+          </div>
+
+          <h4 id="puzzle-question-text" class="text-base sm:text-lg font-black text-slate-900 leading-snug">
+            題目載入中...
+          </h4>
+
+          <div id="puzzle-options-container" class="space-y-2.5 pt-1">
+            <!-- Dynamically generated options -->
+          </div>
+        </div>
+
+        <!-- Result Explanation Box -->
+        <div id="puzzle-feedback-box" class="hidden rounded-2xl p-4 border transition-all">
+          <div class="flex items-center gap-2 font-bold mb-1.5" id="feedback-title"></div>
+          <p id="feedback-explanation" class="text-xs sm:text-sm leading-relaxed"></p>
+          
+          <div class="mt-3 p-3 bg-white/80 rounded-xl border border-slate-200/80 text-xs">
+            <strong class="text-teal-800 block mb-1">🎨 五年級藝術小錦囊：</strong>
+            <span id="feedback-art-tip"></span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Spot Footer -->
+      <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-3">
+        <button onclick="closeModal('modal-puzzle')" class="px-5 py-3 rounded-xl bg-slate-200 hover:bg-slate-300 font-bold text-slate-700 text-sm cursor-pointer">
+          回到地圖
+        </button>
+        <button id="btn-next-mission" onclick="handleNextStepAction()" class="hidden px-6 py-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-sm shadow-md shadow-teal-600/30 flex items-center gap-2 cursor-pointer">
+          <span id="btn-next-mission-text">前進下一題</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal 4: Group Itinerary Route Modal -->
+  <div id="modal-itinerary" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 flex flex-col">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-black text-slate-900 flex items-center gap-2">
+          <i class="fa-solid fa-route text-indigo-600"></i>
+          <span id="itinerary-modal-title">第 1 組專屬探索路線</span>
+        </h3>
+        <button onclick="closeModal('modal-itinerary')" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <p class="text-xs text-slate-500 mb-4">
+        為避免擁擠，各組有專屬解謎順序。點選已通關或當前關卡可直接開啟！
+      </p>
+
+      <!-- 6 Steps Timeline -->
+      <div id="itinerary-steps-list" class="space-y-2.5">
+        <!-- Rendered by JS -->
+      </div>
+
+      <button onclick="closeModal('modal-itinerary')" class="mt-5 w-full py-3 bg-teal-600 text-white font-bold rounded-xl text-sm cursor-pointer hover:bg-teal-700 transition-colors">
+        清楚了，開始出發！
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal 5: Victory Certificate Modal -->
+  <div id="modal-victory" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-2xl w-full p-5 sm:p-7 shadow-2xl border-4 border-amber-300 text-center relative overflow-hidden max-h-[95vh] overflow-y-auto">
+      
+      <div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-3xl bg-gradient-to-tr from-amber-400 to-yellow-300 text-white flex items-center justify-center text-3xl sm:text-4xl shadow-xl shadow-amber-400/30 mb-3 animate-bounce">
+        <i class="fa-solid fa-trophy"></i>
+      </div>
+
+      <span class="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-black uppercase tracking-wider">
+        全數通關達成！
+      </span>
+
+      <h3 class="text-xl sm:text-2xl font-black text-slate-900 mt-2 mb-1">
+        恭喜榮獲「校園美感小大師」
+      </h3>
+      <p class="text-xs sm:text-sm text-slate-600 mb-4">
+        <strong id="victory-group-name" class="text-teal-700">第 1 組</strong> 同學展現出優秀的美感觀察力與團隊合作精神，成功完成六大藝術主題挑戰！
+      </p>
+
+      <!-- Interactive Team Members Input -->
+      <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 mb-4 text-left">
+        <label for="input-team-members" class="block text-xs font-extrabold text-slate-700 mb-1 flex items-center gap-1.5">
+          <i class="fa-solid fa-pen-nib text-teal-600"></i>
+          小組探險家名冊（輸入組員姓名，生成客製 4F 反思報告）：
+        </label>
+        <input type="text" id="input-team-members" oninput="update4FReportPreview()" placeholder="例：林小美、張大同、陳阿明..." class="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 font-bold focus:outline-none focus:ring-2 focus:ring-teal-400" />
+      </div>
+
+      <!-- 4F Thinking Model Dynamic Showcase -->
+      <div class="bg-gradient-to-b from-teal-50/70 to-slate-50 rounded-2xl p-4 border border-teal-200 mb-4 text-left">
+        <div class="flex items-center justify-between border-b border-teal-200/80 pb-2 mb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-teal-600 text-white flex items-center justify-center text-xs font-bold">4F</span>
+            <h4 class="text-base font-black text-slate-900">4F 美感學習反思手冊</h4>
+          </div>
+          <span class="text-[11px] font-bold text-teal-800 bg-teal-100 px-2 py-0.5 rounded-full">高年級美育實踐</span>
+        </div>
+
+        <div class="space-y-3 text-xs sm:text-sm">
+          
+          <!-- 1. Facts 事實 -->
+          <div class="p-3 bg-white rounded-xl border border-teal-100 shadow-2xs">
+            <div class="flex items-center gap-2 font-black text-sky-800 mb-1">
+              <span class="px-1.5 py-0.5 rounded bg-sky-100 text-sky-700 font-extrabold text-[11px]">1. Facts 事實</span>
+              <span>我們在校園現場實際看到了什麼？</span>
+            </div>
+            <ul class="text-slate-600 space-y-1 list-disc list-inside text-xs leading-relaxed">
+              <li><strong>戶外劇場：</strong>看台為由小漸大的同心扇形弧線，暖棕木質舞台在冷灰色水泥牆映襯下格外清晰。</li>
+              <li><strong>操場與球場：</strong>天藍色 PU 跑道延伸出平行圓弧白線，籃球場運用鮮明綠粉雙色塊清楚劃分活動邊界。</li>
+              <li><strong>生態步道：</strong>天然大石表面凹凸風化，展現未經修飾的有機肌理與蜿蜒曲折的 S 型石徑路徑。</li>
+              <li><strong>太陽能建築：</strong>斜屋頂朝陽面傾斜，深藍色集光板由無數等距的小方格陣列構成反覆幾何秩序。</li>
+              <li><strong>兒童遊戲區：</strong>螺旋旋轉滑梯由高明度黃橘色管身組成，地面鋪設天藍與草綠安全軟墊作為冷色基底。</li>
+              <li><strong>中庭穿堂廊道：</strong>筆直垂直的人造水泥廊柱框住了中庭茂盛的老樹冠層，陽光透過枝葉在地面灑下斑駁碎金光影。</li>
+            </ul>
+          </div>
+
+          <!-- 2. Feelings 感受 -->
+          <div class="p-3 bg-white rounded-xl border border-teal-100 shadow-2xs">
+            <div class="flex items-center gap-2 font-black text-emerald-800 mb-1">
+              <span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 font-extrabold text-[11px]">2. Feelings 感受</span>
+              <span>走在這些美感角落時，我們的感官與心靈體驗？</span>
+            </div>
+            <p class="text-slate-600 text-xs leading-relaxed">
+              站在天藍色跑道與仰望太陽能斜屋頂時，感受到大空間帶來的<strong>「遼闊、沉靜與秩序感」</strong>；親手觸摸景觀大石與看到黃橘色滑梯時，體會到天然材質的<strong>「質樸溫度」</strong>與高彩度色彩引發的<strong>「愉悅前進動能」</strong>；在穿堂透過柱子凝望老樹時，微風吹過地面光影搖曳，帶來<strong>「放鬆而詩意的安寧」</strong>。
+            </p>
+          </div>
+
+          <!-- 3. Findings 發現 -->
+          <div class="p-3 bg-white rounded-xl border border-teal-100 shadow-2xs">
+            <div class="flex items-center gap-2 font-black text-amber-800 mb-1">
+              <span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-extrabold text-[11px]">3. Findings 發現</span>
+              <span>我們掌握了哪些五年級的核心美學原則？</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-slate-700 text-xs">
+              <div class="p-2 bg-amber-50/60 rounded-lg border border-amber-200/80">
+                <span class="font-bold text-amber-900">● 冷暖色彩對比：</span>暖色產生前進凸顯效果，冷色具後退安定特性，主次分明。
+              </div>
+              <div class="p-2 bg-amber-50/60 rounded-lg border border-amber-200/80">
+                <span class="font-bold text-amber-900">● 線條動態節奏：</span>曲線引導視線產生流動感，直線確立明確邊界秩序。
+              </div>
+              <div class="p-2 bg-amber-50/60 rounded-lg border border-amber-200/80">
+                <span class="font-bold text-amber-900">● 有機造型肌理：</span>大自然的非對稱形體與觸覺肌理能調和人造建物的生硬感。
+              </div>
+              <div class="p-2 bg-amber-50/60 rounded-lg border border-amber-200/80">
+                <span class="font-bold text-amber-900">● 框景構圖深度：</span>利用建築結構（門框、立柱）借景自然，能大幅加深立體空間感。
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Future 未來行動 -->
+          <div class="p-3 bg-white rounded-xl border border-teal-100 shadow-2xs">
+            <div class="flex items-center gap-2 font-black text-rose-800 mb-1">
+              <span class="px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 font-extrabold text-[11px]">4. Future 未來</span>
+              <span>在未來的藝術創作與日常生活中，我們可以怎麼運用？</span>
+            </div>
+            <ul class="text-slate-600 space-y-1 list-disc list-inside text-xs leading-relaxed">
+              <li><strong>繪畫創作：</strong>在水彩或設計作業中，大膽使用「冷暖對比」與「暖色前進特質」來強調畫作的核心主角。</li>
+              <li><strong>生活攝影：</strong>用平板或相機取景時，主動尋找身旁的窗戶、樹枝或門柱進行「框景構圖」，拍出層次豐富的照片。</li>
+              <li><strong>空間美化：</strong>在教室佈置或校園角落提案時，懂得運用「色彩分割機能」與「跳動音符點綴色」，營造既活潑又有序的環境。</li>
+            </ul>
+          </div>
+
+        </div>
+
+        <!-- Copy 4F Summary Button -->
+        <div class="mt-3 pt-2.5 border-t border-teal-200/70 flex justify-end">
+          <button onclick="copy4FSummary()" class="px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors">
+            <i class="fa-regular fa-clipboard"></i>
+            <span>複製 4F 反思全文（可貼於學習單/聯絡簿）</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex gap-2">
+        <button onclick="triggerVictoryConfetti()" class="py-3 px-4 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold text-sm flex items-center justify-center gap-1.5 cursor-pointer">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <span>再來一次彩帶 🎉</span>
+        </button>
+        <button onclick="closeModal('modal-victory')" class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-white font-black text-sm shadow-md shadow-teal-500/30 cursor-pointer">
+          完成探索，返回地圖
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal 6: Reset Confirmation Modal (Strictly Alert-Free) -->
+  <div id="modal-reset-confirm" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center">
+      <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl mx-auto mb-3">
+        <i class="fa-solid fa-rotate-left"></i>
+      </div>
+      <h3 class="text-lg font-black text-slate-900 mb-1">確定要重設本組挑戰進度嗎？</h3>
+      <p class="text-xs text-slate-500 mb-5">
+        本組所有已獲得的藝術徽章與答題紀錄將歸零，適合由下一班級或重新挑戰時使用。
+      </p>
+      <div class="flex gap-2">
+        <button onclick="closeModal('modal-reset-confirm')" class="flex-1 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 font-bold text-slate-700 text-sm cursor-pointer">
+          取消
+        </button>
+        <button onclick="executeResetGroup()" class="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 font-bold text-white text-sm shadow-md shadow-rose-600/20 cursor-pointer">
+          確認重設
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Toast Notification System (Alert-Free) -->
+  <div id="global-toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all duration-300 transform -translate-y-10 opacity-0 bg-slate-900/90 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 text-sm font-bold backdrop-blur">
+    <i id="toast-icon" class="fa-solid fa-circle-info text-teal-400"></i>
+    <span id="toast-message">訊息通知</span>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       1. GAME DATA: 6 STATIONS & 3 SUB-QUESTIONS EACH (18 REALITY PUZZLES)
+       ========================================================================== */
+    const STATIONS = [
+      {
+        id: 1,
+        name: "戶外劇場",
+        theme: "色彩冷暖與扇形向心視覺",
+        badgeIcon: "fa-palette",
+        badgeColor: "amber",
+        locationDesc: "主教學樓群中央凹形戶外扇形舞台",
+        observation: "【實地任務】：請全組走到看台最上方一階往下俯瞰舞台，實地觀察看台台階走向、木質舞台顏色與背後的水泥牆面。",
+        questions: [
+          {
+            title: "題目一：造形與視線引導",
+            prompt: "站在現場階梯看台最上方俯瞰舞台，實地觀察建築構造與視覺線條：現場的階梯坐席呈現由小漸大的何種幾何弧線？在視覺上有何作用？",
+            options: [
+              { text: "看台為「同心放射扇形弧線」，由小漸大展開，將全場視線自然匯聚於舞台中心焦點", correct: true },
+              { text: "看台為「水平平行階梯直線」，左右橫向延展，營造出整齊對稱且向兩側延伸的開闊感", correct: false },
+              { text: "看台為「360度封閉式圓形環狀結構」，形成完整環繞坐席，使舞台位於正中央位置", correct: false },
+              { text: "看台為「兩翼對稱的V字形夾角斜線」，透過斜角透視引導視線向遠方天際發散", correct: false }
+            ],
+            explanation: "【實景印證】：現場戶外劇場採用扇形同心弧線設計，這種「向心聚焦點」能自然把全場目光集中於舞台。",
+            artTip: "幾何向心線條是視覺藝術中創造視覺焦點（Focal Point）最有效的手法。"
+          },
+          {
+            title: "題目二：色彩與冷暖對比",
+            prompt: "請全組仔細比對：舞台地面鋪設的「暖棕木板」與周圍教學大樓的「冷灰水泥牆面」，在色彩明暗與構圖上發揮了什麼藝術效果？",
+            options: [
+              { text: "暖棕木質舞台在冷灰色水泥建築襯托下形成「冷暖對比」，使舞台成為視覺注目的暖色核心", correct: true },
+              { text: "舞台與水泥建築皆採用低彩度灰冷色系，形成「同色調和諧」，刻意淡化舞台與環境的界線", correct: false },
+              { text: "舞台採用與周遭草皮完全相同的深草綠色，使表演區域完全隱沒融入大自然背景中", correct: false },
+              { text: "舞台與牆面皆鋪貼純白高反光磁磚，利用均勻的高明度反光消除所有陰影與立體層次", correct: false }
+            ],
+            explanation: "【實景印證】：暖棕木板（暖色調）在周圍冷灰水泥（冷色調）的包圍下，形成強烈冷暖對比，主次分明！",
+            artTip: "「冷暖色彩對比」能大幅提升物體在環境中的立體感與可視度。"
+          },
+          {
+            title: "題目三：節奏與色彩點綴",
+            prompt: "實地觀察階梯看台上零星分佈的彩色座席墊片（紅、紫、天藍色）：在灰褐色的台階上加入這些色彩，發揮了什麼效果？",
+            options: [
+              { text: "如同音樂中的「跳動音符（色彩節奏 Rhythm）」，打破大面積灰色的單調感，增添活潑動態", correct: true },
+              { text: "嚴格依照彩虹紅橙黃綠藍靛紫的光譜順序排列，呈現出絕對精準嚴謹的色相環秩序", correct: false },
+              { text: "全數採用與階梯水泥相同深淺的無彩色黑灰色墊片，追求極簡主義的均質純粹感", correct: false },
+              { text: "僅在看台第一排中央集中配置單一純紅色座墊作為標記，其餘階梯皆保持完全留白", correct: false }
+            ],
+            explanation: "【實景印證】：在低彩度的灰階背景中點綴高彩度色塊，能創造出如同旋律跳動般的視覺韻律（Rhythm）！",
+            artTip: "在公共空間中，「點綴色（Accent Color）」能賦予靜止建築鮮活的節奏感。"
+          }
+        ]
+      },
+      {
+        id: 2,
+        name: "操場與雙籃球場",
+        theme: "運動色彩與線條動態對比",
+        badgeIcon: "fa-wave-square",
+        badgeColor: "blue",
+        locationDesc: "東側藍色橢圓田徑跑道與雙座籃球場",
+        observation: "【實地任務】：請全組走到操場跑道彎道處，蹲下平視跑道地面與隔壁籃球場，比對白線形狀與地面色彩。",
+        questions: [
+          {
+            title: "題目一：跑道色系與環境心理",
+            prompt: "實地觀察操場跑道：本校跑道並非傳統紅土，而是採用了哪種現代色彩？在視覺心理上帶來什麼感受？",
+            options: [
+              { text: "鮮明的「天藍色系」，呼應天空與水波，在視覺上營造出遼闊、冷靜且富含前進動能的現代感", correct: true },
+              { text: "傳統的「暗紅磚土色系」，營造出沉穩、厚重且深具歷史傳統質感的經典運動場氛圍", correct: false },
+              { text: "自然的「深墨草綠色系」，讓運動跑道與周圍綠植草坪融為一體，達到全場色彩的同色調和", correct: false },
+              { text: "明亮的「亮黃與橙橘色系」，藉由高彩度暖色系激發高昂熱烈的情緒與緊張競爭感", correct: false }
+            ],
+            explanation: "【實景印證】：天藍色PU跑道帶來視覺降溫與寬廣開闊感，打破傳統紅土跑道的沉悶，充滿現代活力！",
+            artTip: "藍色在色彩心理學上具有穩定心情、引導冷靜專注且具備速度意象的作用。"
+          },
+          {
+            title: "題目二：線條的曲直對比",
+            prompt: "站在彎道邊線向前望：跑道上的白色「曲線」與旁邊籃球場的彩色「直線」，在視覺動態上有何不同？",
+            options: [
+              { text: "跑道白線引導視線產生「流動與奔馳的速度感」；球場直線則呈現「規律、邊界與嚴謹的秩序感」", correct: true },
+              { text: "跑道與球場皆全面採用自由流動的波浪曲線，打破所有運動空間的剛硬邊界與方向感", correct: false },
+              { text: "跑道線條是筆直交錯的棋盤格直線陣列，球場邊界反而是由層層同心圓弧線所構成", correct: false },
+              { text: "跑道與球場皆是由不規則短虛線組成的斷續節奏，主要功能在於裝飾地面而非指引動線", correct: false }
+            ],
+            explanation: "【實景印證】：跑道的平行橢圓連續曲線創造強烈奔跑流動感，與相鄰籃球場的垂直交錯直線形成剛柔並濟的曲直對比！",
+            artTip: "曲線代表速度、流動與柔和；直線代表剛毅、界線與秩序。"
+          },
+          {
+            title: "題目三：色塊劃分與機能美",
+            prompt: "實地觀察雙座籃球場：禁區與外圍採用綠色與粉紅色的雙色拼塊，這種設計在視覺機能上有何目的？",
+            options: [
+              { text: "透過明確的「高彩度色塊分割」，使運動空間範圍一目了然，兼顧實用運動機能與活潑對比", correct: true },
+              { text: "全場地坪統一漆成均勻的水泥冷灰色，僅依賴細白線標示，追求極簡乾淨的工業視覺風格", correct: false },
+              { text: "採用深藍與淺藍的同色調漸層過渡，讓球場外圍自然融入操場跑道色系，降低界線清晰度", correct: false },
+              { text: "地坪塗刷成黑白相間的西洋棋盤格紋，營造嚴密幾何對稱感並訓練球員的空間位移計算", correct: false }
+            ],
+            explanation: "【實景印證】：籃球場的紅綠雙色地坪分割，清楚標示禁區與邊界，是典型的公共運動空間機能美學。",
+            artTip: "色彩分割（Color Blocking）能直觀地區分不同功能領域，是實用藝術的核心法則。"
+          }
+        ]
+      },
+      {
+        id: 3,
+        name: "北側石徑生態步道",
+        theme: "蜿蜒動線與天然有機肌理",
+        badgeIcon: "fa-leaf",
+        badgeColor: "emerald",
+        locationDesc: "校園北側綠地、草坪與蜿蜒石頭小徑",
+        observation: "【實地任務】：請全組漫步走上北側石徑小路，並親手摸一摸路旁大型天然景觀石與樹皮表面。",
+        questions: [
+          {
+            title: "題目一：路徑造形與動線節奏",
+            prompt: "實地漫步在北側步道上：這條穿梭在綠地草坪中的石徑步道，在地面線條造形上是如何設計的？",
+            options: [
+              { text: "呈現隨地形起伏的「S型蜿蜒曲折小徑」，打破人造建物的僵直感，引導人放慢腳步親近綠意", correct: true },
+              { text: "設計為「絕對筆直貫穿的南北中軸大道」，展現古典對稱庭園般嚴肅宏偉的直線透視感", correct: false },
+              { text: "採用「同心圓環狀同心步道」，由外向內一圈圈盤旋，將所有步行動線聚焦於中心花圃", correct: false },
+              { text: "規劃為「十字交錯的棋盤式直角短徑」，讓人在草坪各區塊間能以最高效率直線穿梭", correct: false }
+            ],
+            explanation: "【實景印證】：S型曲折路徑順應地形微幅彎曲，讓人在行進中隨步伐轉換觀賞視角，極具漫遊詩意。",
+            artTip: "園林景觀常採用「曲徑通幽」手法，以曲線延長空間縱深感。"
+          },
+          {
+            title: "題目二：觸摸天然肌理",
+            prompt: "用手親自觸摸步道旁擺設的景觀大石，再對比校舍的水泥柱：大石表面的觸感在藝術中稱為什麼特徵？",
+            options: [
+              { text: "天然大石保留了大自然風化凹凸的「粗糙天然肌理（Texture）」，與水泥平整光滑形成手感對比", correct: true },
+              { text: "景觀大石經過人工精細鏡面研磨，表面呈現「完全平滑光亮」，能清晰倒映出四周樹影", correct: false },
+              { text: "大石外層塗有一層厚實的防水亮光膠，觸摸時呈現帶有黏彈性的「合成塑料人工質感」", correct: false },
+              { text: "石面被刻鑿出深淺均等的等距幾何平行溝槽，展現機械加工所創造的「規律條紋肌理」", correct: false }
+            ],
+            explanation: "【實景印證】：天然岩石未經人工刻意打磨，其天然孔隙與起伏呈現最純粹的「有機肌理（Organic Texture）」。",
+            artTip: "肌理（Texture）是物體表面的觸覺特徵，能豐富作品的感官層次。"
+          },
+          {
+            title: "題目三：有機造型與自然平衡",
+            prompt: "景觀大石與兩旁花草樹木的造形，與教學大樓方正立方體相比，屬於哪一種形體美學？",
+            options: [
+              { text: "屬於非對稱且順應生長的「非對稱有機形體（Organic Shapes）」，散發大自然自由律動之美", correct: true },
+              { text: "屬於精準符合黃金比例切割的「幾何正多面體」，展現出純粹數學邏輯的嚴密對稱性", correct: false },
+              { text: "全數經過人工修剪成規格相同的圓球與方塊，屬於人工嚴密控制下的「規整人造造型」", correct: false },
+              { text: "呈現尖銳銳角與倒三角形交錯的「動態幾何構成」，刻意強調人為雕琢的強烈張力", correct: false }
+            ],
+            explanation: "【實景印證】：大自然的石頭、樹木皆無絕對對稱，屬於自然演化出的非對稱有機造形。",
+            artTip: "有機造形（Organic Shapes）無拘無束、線條圓融，常能帶給人心靈療癒與放鬆感。"
+          }
+        ]
+      },
+      {
+        id: 4,
+        name: "太陽能科技教學樓",
+        theme: "傾斜向陽面與單元幾何秩序",
+        badgeIcon: "fa-solar-panel",
+        badgeColor: "indigo",
+        locationDesc: "教學大樓斜屋頂上整齊排列的藍色太陽能板",
+        observation: "【實地任務】：請全組站在西側教學大樓前空地抬頭仰望頂樓屋頂，觀察屋頂傾斜角度與太陽能方格陣列。",
+        questions: [
+          {
+            title: "題目一：向陽傾斜斜面構造",
+            prompt: "實地抬頭仰望大樓屋頂：現場大樓的屋頂結構呈現什麼特徵以配合陽光照射？",
+            options: [
+              { text: "屋頂結構為朝向採光方位的「傾斜斜頂構造」，兼具受光綠能機能與有力的斜向天際線構圖", correct: true },
+              { text: "屋頂為完全水平的「平頂天台構造」，四平八穩地橫向展開，展現安定平穩的水平線條", correct: false },
+              { text: "屋頂為圓弧拱形的「穹頂半球構造」，使光線向四面八方均勻折射，呈現柔和飽滿體量", correct: false },
+              { text: "屋頂為左右完全對稱的「雙向人字形尖頂」，呈現古典歐式雙坡斜屋頂的均衡比例", correct: false }
+            ],
+            explanation: "【實景印證】：教學大樓斜屋頂朝採光方位傾斜，斜角造型在天際線中劃出有力的斜向線條，富有動態感。",
+            artTip: "傾斜線條在建築造型中常能打破水平與垂直的靜止感，創造前衛張力。"
+          },
+          {
+            title: "題目二：單元反覆與規律秩序",
+            prompt: "觀察每一大片深藍色太陽能板：內部由密集等距的小方格陣列組成，這種手法在藝術中創造了什麼美感？",
+            options: [
+              { text: "運用「單元反覆排列（Repetition）」的手法，以等距小矩陣展現精密、理性的「現代幾何秩序美」", correct: true },
+              { text: "採用大小不一的碎形進行「非規律拼貼（Collage）」，刻意打破方塊單調以追求前衛抽象美", correct: false },
+              { text: "呈現由中心向四周放射的同心射線排列，營造出強烈向外發散的光芒擴散動態視覺", correct: false },
+              { text: "以波浪起伏的起伏曲線交織排列，試圖模仿自然界水波紋理在陽光折射下的柔和韻律", correct: false }
+            ],
+            explanation: "【實景印證】：太陽能光電板由無數等距的小方形矩陣整齊組合，展現高度理性與規律的工業幾何美學。",
+            artTip: "反覆（Repetition）與規律（Order）是包浩斯與現代主義構成的重要原理。"
+          },
+          {
+            title: "題目三：綠建築科技意象",
+            prompt: "太陽能板表面深藍色的微光與整座教學大樓的外觀結合，在色彩與造型上傳遞出何種校園意象？",
+            options: [
+              { text: "深藍光澤與開闊天際相輝映，象徵「現代科技與生態環境和諧共生」的永續綠建築意象", correct: true },
+              { text: "藉由大面積金屬電鍍與金黃亮漆塗裝，塑造出奢華昂貴且引人注目的古典宮殿氛圍", correct: false },
+              { text: "刻意刷舊仿古成紅土紅磚質樸色調，營造懷舊復古的傳統鄉村聚落與歷史厚重感", correct: false },
+              { text: "全棟外牆皆為純白無反光塗裝，傳遞極度純淨無暇但帶有強烈距離感的極簡醫療意象", correct: false }
+            ],
+            explanation: "【實景印證】：深藍色的太陽能板與現代校舍線條結合，是當代綠建築（Green Architecture）中兼具環保與科技美感的典範。",
+            artTip: "現代公共藝術講求「形式追隨機能（Form follows function）」，讓環保科技本身化身為美學裝置。"
+          }
+        ]
+      },
+      {
+        id: 5,
+        name: "南側彩色兒童遊戲區",
+        theme: "高彩度三原色與色彩心理學",
+        badgeIcon: "fa-shapes",
+        badgeColor: "rose",
+        locationDesc: "南側彩色安全軟墊、滑梯遊具與球類互動區",
+        observation: "【實地任務】：請全組走到南側兒童遊戲區旋轉滑梯旁，比對滑梯管身顏色與腳下安全地墊色塊。",
+        questions: [
+          {
+            title: "題目一：高彩度暖色與前進感",
+            prompt: "實地觀察大型旋轉溜滑梯：滑梯管道採用了鮮明的黃色與橘色，從色彩心理學來看具有什麼視覺效應？",
+            options: [
+              { text: "黃橘色屬於高明度「前進色（Advancing Colors）」，視覺上跳脫背景更醒目，引發活潑躍動的情緒", correct: true },
+              { text: "黃橘色在色彩學中屬於「安定後退色」，能平撫孩童激動情緒，讓遊具安靜融入校園背景之中", correct: false },
+              { text: "採用黃橘色是為了降低色彩對比，使遊具在強烈陽光照射下不產生任何視覺焦點與反差", correct: false },
+              { text: "黃橘色屬於低彩度中性色，主要作用在於防髒耐磨，與視覺心理及空間美感無直接關聯", correct: false }
+            ],
+            explanation: "【實景印證】：黃色與橘色明度高、彩度高，在視覺上具有「向前凸顯」的特質，極易引起注意，保障安全且富童趣。",
+            artTip: "暖色調（紅、橙、黃）通常被視為「前進色」，能拉近距離感並傳遞溫暖活力。"
+          },
+          {
+            title: "題目二：旋轉管身與立體雕塑",
+            prompt: "觀察旋轉溜滑梯蜿蜒盤旋的立體管身：在三維立體造型上，它類似於哪種戶外藝術形式？",
+            options: [
+              { text: "螺旋迴轉的立體管身在空間中蜿蜒，兼具肢體穿梭體驗與造型美感，宛如一座「大型戶外動態雕塑」", correct: true },
+              { text: "呈現四平八穩的立體正方體積木堆疊，強調「靜態平衡與重力建築」的堅固量體感", correct: false },
+              { text: "採用垂直立面浮雕壁畫形式，將圖案扁平附著於牆面，屬於「二維半平面裝飾藝術」", correct: false },
+              { text: "模仿大自然天然溶洞鐘乳石的下垂造型，強調「重力下垂與隨機風化」的有機沉積造形", correct: false }
+            ],
+            explanation: "【實景印證】：螺旋旋轉的溜滑梯管身在空間中展開螺旋曲線，學童穿梭其中，本身就是一件充滿生命力的互動雕塑！",
+            artTip: "公共遊具設計是「互動式公共藝術（Interactive Public Art）」的最佳體現。"
+          },
+          {
+            title: "題目三：冷色地墊的安全襯托",
+            prompt: "腳下鋪設的天藍色與草綠色安全軟墊，在色彩學上扮演什麼角色以襯托暖色滑梯？",
+            options: [
+              { text: "藍綠冷色系為「後退色與安定色」，作為地表基底能襯托暖色遊具，形成明快活潑的冷暖對比", correct: true },
+              { text: "地面同樣鋪設大面積鮮紅與亮黃暖色地墊，形成同質色系的極限彩度衝擊與視覺刺激", correct: false },
+              { text: "地面採用全黑色橡膠鋪面，消除所有反光，藉此營造嚴肅沉靜的運動專注氣氛", correct: false },
+              { text: "地面鋪設模仿木質的暖棕色地墊，旨在消除冷暖對比，使遊具與自然大地色彩完全調和", correct: false }
+            ],
+            explanation: "【實景印證】：天藍與綠色軟墊提供柔和安定的冷色背景，襯托上方黃橘暖色滑梯，既符合視覺安全辨識，又充滿童趣。",
+            artTip: "「暖色前進、冷色後退」是空間色彩規劃中營造層次與安全指引的黃金法則。"
+          }
+        ]
+      },
+      {
+        id: 6,
+        name: "中庭老樹穿堂廊道",
+        theme: "透視景深與人造框景構圖",
+        badgeIcon: "fa-tree",
+        badgeColor: "teal",
+        locationDesc: "教學大樓之間通透的廊道，望向茂盛老樹",
+        observation: "【實地任務】：請全組走到穿堂走廊正中央，面向中庭老樹，用雙手比出一個相機觀景窗框住老樹。",
+        questions: [
+          {
+            title: "題目一：廊柱與樹冠的剛柔對比",
+            prompt: "站在穿堂走廊中央：兩側筆直的水泥廊柱與正前方中庭老樹的樹冠，在線條與形狀上呈現什麼對比？",
+            options: [
+              { text: "人造建築的「垂直嚴謹幾何直線」與老樹的「天然茂盛圓弧有機曲線」形成剛柔並濟的和諧美", correct: true },
+              { text: "廊柱與老樹樹幹皆為歪斜不規則的徒手曲線，共同營造出完全自由無拘的原始森林感", correct: false },
+              { text: "兩側廊柱刻意修飾成粗糙仿樹皮弧形，老樹則修剪成四方形綠雕，使兩者造型完全均質一致", correct: false },
+              { text: "廊柱的水平橫向延伸線條與老樹垂直向上生長的筆直樹幹，構成純粹的十字垂直構圖", correct: false }
+            ],
+            explanation: "【實景印證】：廊柱的筆直剛硬與老樹枝葉的蓬鬆柔軟在同一個視角交會，展現人造物與自然生命的完美互補。",
+            artTip: "剛硬直線與柔和曲線的對比，是現代建築景觀設計中創造生命力的重要手法。"
+          },
+          {
+            title: "題目二：框景構圖法 (Framing)",
+            prompt: "透過兩側水泥方柱與天花板望向中庭老樹，彷彿為老樹加上了一個畫框，這在美學與攝影中稱為什麼？",
+            options: [
+              { text: "「框景（Framing）」構圖，利用前景的廊柱與橫樑當畫框，引導視線聚焦並創造立體景深", correct: true },
+              { text: "「全景鳥瞰（Panorama）」，消除所有前景障礙物，追求無邊無界、360度開闊的平視大景", correct: false },
+              { text: "「散點透視（Multi-point perspective）」，讓視線均勻分散在走廊各個角落，避免出現主要視覺焦點", correct: false },
+              { text: "「微距近攝（Macro-focus）」，將視線完全鎖定在眼前的水泥柱粗糙紋理，忽略遠方背景景物", correct: false }
+            ],
+            explanation: "【實景印證】：建築柱樑自然形成天然相框，將戶外老樹綠意收進框內，形成極具深度層次的框景美學！",
+            artTip: "「框景構圖」能把平凡的戶外風景轉化為一幅懸掛在廊道中的自然畫作。"
+          },
+          {
+            title: "題目三：光影穿透與虛實明暗",
+            prompt: "陽光穿透中庭老樹茂密的枝葉灑在走廊斑馬線鋪面上，在視覺上產生了什麼動態光影效果？",
+            options: [
+              { text: "在走廊地面投射出斑駁搖曳的「碎金光影（虛實明暗）」，讓靜止的水泥空間充滿時間與自然的生動律動", correct: true },
+              { text: "樹冠完全遮蔽所有陽光，在走廊形成均勻一致且邊界銳利的整片深黑陰影，毫無虛實變化", correct: false },
+              { text: "陽光穿透葉縫聚焦成數十條平行筆直的強烈光束，在地面形成精準的等距高亮線條陣列", correct: false },
+              { text: "陽光照射在老樹葉面上產生強烈的金屬鏡面反射，使整個廊道天花板充滿均勻刺眼的白光", correct: false }
+            ],
+            explanation: "【實景印證】：枝葉間灑下的光斑隨微風與日照角度搖曳，光影虛實（Light and Shadow）為靜態的走廊注入生命力。",
+            artTip: "自然光穿透樹影產生的「斑駁光影」，是許多印象派大師終身捕捉的美感精髓。"
+          }
+        ]
+      }
+    ];
+
+    /* ==========================================================================
+       2. GROUP ROTATION ITINERARIES (6 GROUPS STAGGERED ROUTING)
+       ========================================================================== */
+    const GROUP_ROUTES = {
+      1: [1, 2, 3, 4, 5, 6],
+      2: [2, 3, 4, 5, 6, 1],
+      3: [3, 4, 5, 6, 1, 2],
+      4: [4, 5, 6, 1, 2, 3],
+      5: [5, 6, 1, 2, 3, 4],
+      6: [6, 1, 2, 3, 4, 5]
+    };
+
+    /* App Global State with Independent Group Progress Tracking */
+    let currentGroupId = 1;
+    const groupProgress = {
+      1: new Set(),
+      2: new Set(),
+      3: new Set(),
+      4: new Set(),
+      5: new Set(),
+      6: new Set()
+    };
+    
+    // Active Station & Question Solving State
+    let currentActiveSpotId = 1;
+    let currentStationModalId = 1;
+    let currentQuestionIdx = 0; // 0, 1, 2
+    let stationLives = 3;       // 3 chances per station
+    let isReviewMode = false;
+    let synth = null;
+
+    // Fisher-Yates Shuffle algorithm to uniformly randomize question options
+    function shuffleArray(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function generate4FText() {
+      const members = document.getElementById('input-team-members')?.value?.trim() || "全體組員";
+      return `【校園藝術探索家 4F 美感學習反思報告】
+隊伍名稱：第 ${currentGroupId} 組
+探險組員：${members}
+完成時間：${new Date().toLocaleDateString('zh-TW')}
+
+一、Facts（事實 - 我們在校園現場實際看到了什麼？）
+1. 戶外劇場：同心扇形放射階梯，暖棕木質舞台在周邊冷灰色水泥牆對比下成為焦點。
+2. 操場球場：天藍色PU跑道與白色流動圓弧線，雙座籃球場以高彩度綠粉雙色塊劃分邊界。
+3. 生態步道：S型蜿蜒曲折小徑，天然景觀大石未經修飾，呈現自然風化粗糙肌理。
+4. 太陽能大樓：斜屋頂傾斜向陽，深藍色集光板由無數等距的小方格呈現規律的幾何秩序。
+5. 兒童遊戲區：高明度黃橘色螺旋滑梯管身，搭配天藍與草綠安全軟墊作為後退冷色背景。
+6. 中庭穿堂：垂直水泥廊柱如同天然畫框，框住老樹茂盛自然冠層，地面灑滿斑駁碎金光影。
+
+二、Feelings（感受 - 走在這些角落時的感官與心靈體驗？）
+站在開闊的天藍色跑道與仰望斜屋頂時，感受到現代科技的遼闊與秩序；觸摸天然巨石與看見黃橘滑梯時，體驗到自然的溫暖純樸與童年遊戲的躍動歡樂；在穿堂凝望老樹時，微風與光影搖曳帶來安寧放鬆的詩意。
+
+三、Findings（發現 - 我們掌握了哪些核心美學原則？）
+1. 冷暖色彩對比：暖色具前進感可凸顯主體，冷色具後退感可安定空間。
+2. 線條動態節奏：曲線營造奔馳流動感，直線建立界線與嚴謹秩序。
+3. 有機造型肌理：大自然非對稱有機形體與天然肌理，能調和人造建物的生硬感。
+4. 框景構圖深度：利用人造結構借景大自然，能大幅加深立體景深與聚焦主體。
+
+四、Future（未來行動 - 日常生活與藝術創作如何運用？）
+1. 繪畫創作中，運用「冷暖色彩對比」與「暖色前進性」強化畫面視覺焦點。
+2. 平常攝影拍照時，善用身邊的門柱、窗櫺尋找「框景（Framing）」，拍出深度感。
+3. 參與班級或校園空間改造時，依據功能規劃合適的色彩分割與節奏點綴。`;
+    }
+
+    function copy4FSummary() {
+      const text = generate4FText();
+      const onCopySuccess = () => {
+        playNoticeSound();
+        showToast("4F 反思報告已複製至剪貼簿！可貼於學習單中", "fa-clipboard-check", "text-emerald-400");
+      };
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(onCopySuccess).catch(() => {
+          fallbackExecCopy(text, onCopySuccess);
+        });
+      } else {
+        fallbackExecCopy(text, onCopySuccess);
+      }
+    }
+
+    function update4FReportPreview() {
+      // Live sync input if needed
+    }
+
+    function showToast(message, icon = 'fa-circle-check', color = 'text-teal-400') {
+      const toast = document.getElementById('global-toast');
+      const toastMsg = document.getElementById('toast-message');
+      const toastIcon = document.getElementById('toast-icon');
+      if (!toast) return;
+
+      toastMsg.textContent = message;
+      toastIcon.className = `fa-solid ${icon} ${color}`;
+      toast.classList.remove('-translate-y-10', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('-translate-y-10', 'opacity-0');
+      }, 3000);
+    }
+
+    function initAudio() {
+      if (!synth && window.Tone) {
+        try {
+          synth = new Tone.PolySynth(Tone.Synth).toDestination();
+          synth.volume.value = -6;
+        } catch (e) {
+          console.warn("Tone audio initialization warning:", e);
+        }
+      }
+    }
+
+    function playSuccessSound() {
+      try {
+        initAudio();
+        if (window.Tone && Tone.context.state !== 'running') {
+          Tone.start();
+        }
+        if (synth) {
+          const now = Tone.now();
+          synth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "8n", now);
+        }
+      } catch (e) {
+        console.warn("Audio feedback skipped:", e);
+      }
+    }
+
+    function playNoticeSound() {
+      try {
+        initAudio();
+        if (window.Tone && Tone.context.state !== 'running') {
+          Tone.start();
+        }
+        if (synth) {
+          const now = Tone.now();
+          synth.triggerAttackRelease(["E5", "B5"], "16n", now);
+        }
+      } catch (e) {
+        console.warn("Audio feedback skipped:", e);
+      }
+    }
+
+    function getShareableUrl() {
+      let url = window.location.href;
+      if (!url || url === 'about:srcdoc' || url.startsWith('about:') || url.startsWith('file:')) {
+        try {
+          if (window.top && window.top.location.href && !window.top.location.href.startsWith('about:')) {
+            url = window.top.location.href;
+          }
+        } catch (e) {
+          url = window.location.origin || "https://campus-art-explorer.local";
+        }
+      }
+      return url;
+    }
+
+    function setupDynamicQRCode() {
+      const shareUrl = getShareableUrl();
+      const currentUrlElem = document.getElementById('current-url-text');
+      if (currentUrlElem) {
+        currentUrlElem.textContent = shareUrl;
+      }
+      
+      const qrContainer = document.getElementById('qrcode-canvas');
+      if (!qrContainer) return;
+      qrContainer.innerHTML = '';
+      
+      try {
+        if (typeof QRCode !== 'undefined') {
+          new QRCode(qrContainer, {
+            text: shareUrl,
+            width: 190,
+            height: 190,
+            colorDark: "#0F766E",
+            colorLight: "#FFFFFF",
+            correctLevel: QRCode.CorrectLevel.M
+          });
+        } else {
+          throw new Error("QRCode library not loaded");
+        }
+      } catch (err) {
+        console.warn("QRCode fallback rendering:", err);
+        qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=190x190&data=${encodeURIComponent(shareUrl)}" alt="QR Code" class="w-48 h-48 rounded-xl shadow-xs" />`;
+      }
+    }
+
+    function copyCurrentUrl() {
+      const urlToCopy = getShareableUrl();
+      const onCopySuccess = () => {
+        playNoticeSound();
+        const toast = document.getElementById('copy-toast');
+        if (toast) toast.classList.remove('hidden');
+        showToast("網址已成功複製！可分享給其他組別", "fa-circle-check", "text-emerald-400");
+        setTimeout(() => {
+          if (toast) toast.classList.add('hidden');
+        }, 3000);
+      };
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(urlToCopy).then(onCopySuccess).catch(() => {
+          fallbackExecCopy(urlToCopy, onCopySuccess);
+        });
+      } else {
+        fallbackExecCopy(urlToCopy, onCopySuccess);
+      }
+    }
+
+    function fallbackExecCopy(text, callback) {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.top = "0";
+      textArea.style.left = "0";
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        if (callback) callback();
+      } catch (err) {
+        showToast("請手動選取網址進行複製", "fa-circle-exclamation", "text-amber-400");
+      }
+      document.body.removeChild(textArea);
+    }
+
+    const btnFullscreen = document.getElementById('btn-fullscreen');
+    const fullscreenIcon = document.getElementById('fullscreen-icon');
+
+    if (btnFullscreen) {
+      btnFullscreen.addEventListener('click', () => {
+        playNoticeSound();
+        const doc = document;
+        const docEl = document.documentElement;
+        const isFs = doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement;
+
+        if (!isFs) {
+          const req = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.mozRequestFullScreen || docEl.msRequestFullscreen;
+          if (req) {
+            req.call(docEl).catch(err => {
+              console.warn("Fullscreen permission or restriction:", err);
+              showToast("此瀏覽環境限制全螢幕，但仍可正常遊玩！", "fa-circle-info", "text-amber-300");
+            });
+          } else {
+            showToast("此裝置瀏覽器不支援全螢幕切換", "fa-circle-info", "text-amber-300");
+          }
+        } else {
+          const exit = doc.exitFullscreen || doc.webkitExitFullscreen || doc.mozCancelFullScreen || doc.msExitFullscreen;
+          if (exit) {
+            exit.call(doc).catch(err => console.warn(err));
+          }
+        }
+      });
+    }
+
+    const updateFsIcon = () => {
+      const isFs = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement;
+      if (fullscreenIcon) {
+        if (isFs) {
+          fullscreenIcon.classList.replace('fa-expand', 'fa-compress');
+        } else {
+          fullscreenIcon.classList.replace('fa-compress', 'fa-expand');
+        }
+      }
+    };
+
+    document.addEventListener('fullscreenchange', updateFsIcon);
+    document.addEventListener('webkitfullscreenchange', updateFsIcon);
+    document.addEventListener('mozfullscreenchange', updateFsIcon);
+
+    // Bind Top Action Buttons
+    document.getElementById('btn-qrcode').addEventListener('click', () => {
+      playNoticeSound();
+      setupDynamicQRCode();
+      openModal('modal-qrcode');
+    });
+
+    document.getElementById('btn-copy-url').addEventListener('click', copyCurrentUrl);
+
+    document.getElementById('btn-curriculum').addEventListener('click', () => {
+      playNoticeSound();
+      openModal('modal-curriculum');
+    });
+
+    document.getElementById('btn-show-itinerary').addEventListener('click', () => {
+      playNoticeSound();
+      renderItineraryModal();
+      openModal('modal-itinerary');
+    });
+
+    document.getElementById('btn-enter-spot').addEventListener('click', () => {
+      const currentCompleted = groupProgress[currentGroupId];
+      if (currentCompleted.size === 6) {
+        openModal('modal-victory');
+      } else {
+        openSpotModal(currentActiveSpotId);
+      }
+    });
+
+    document.getElementById('btn-reset-group').addEventListener('click', () => {
+      playNoticeSound();
+      openModal('modal-reset-confirm');
+    });
+
+    function executeResetGroup() {
+      closeModal('modal-reset-confirm');
+      groupProgress[currentGroupId].clear();
+      updateActiveStationForGroup();
+      showToast(`第 ${currentGroupId} 組進度已重設為全新狀態！`, "fa-rotate-right", "text-amber-400");
+      playNoticeSound();
+    }
+
+    function openModal(modalId) {
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        modal.classList.remove('hidden');
+      }
+    }
+
+    function closeModal(modalId) {
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        modal.classList.add('hidden');
+      }
+    }
+
+    // Modal background tap dismissal
+    ['modal-qrcode', 'modal-curriculum', 'modal-puzzle', 'modal-itinerary', 'modal-victory', 'modal-reset-confirm'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('click', (e) => {
+          if (e.target === el) {
+            closeModal(id);
+          }
+        });
+      }
+    });
+
+    // Keyboard ESC key dismissal
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        ['modal-qrcode', 'modal-curriculum', 'modal-puzzle', 'modal-itinerary', 'modal-victory', 'modal-reset-confirm'].forEach(closeModal);
+      }
+    });
+
+    function initGroupButtons() {
+      const container = document.getElementById('group-buttons-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      for (let g = 1; g <= 6; g++) {
+        const btn = document.createElement('button');
+        btn.id = `group-btn-${g}`;
+        btn.className = `py-2.5 px-2 rounded-2xl font-black text-sm sm:text-base border-2 transition-all flex flex-col items-center justify-center cursor-pointer ${
+          g === currentGroupId 
+            ? 'bg-teal-600 text-white border-teal-700 shadow-md scale-102 ring-2 ring-teal-300' 
+            : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
+        }`;
+        btn.innerHTML = `<span>第${g}組</span>`;
+        btn.addEventListener('click', () => selectGroup(g));
+        container.appendChild(btn);
+      }
+    }
+
+    function selectGroup(groupId) {
+      playNoticeSound();
+      currentGroupId = groupId;
+      for (let g = 1; g <= 6; g++) {
+        const btn = document.getElementById(`group-btn-${g}`);
+        if (!btn) continue;
+        if (g === groupId) {
+          btn.className = 'py-2.5 px-2 rounded-2xl font-black text-sm sm:text-base border-2 bg-teal-600 text-white border-teal-700 shadow-md scale-102 ring-2 ring-teal-300 transition-all flex flex-col items-center justify-center cursor-pointer';
+        } else {
+          btn.className = 'py-2.5 px-2 rounded-2xl font-black text-sm sm:text-base border-2 bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 transition-all flex flex-col items-center justify-center cursor-pointer';
+        }
+      }
+      updateActiveStationForGroup();
+      showToast(`已切換為第 ${groupId} 組的探險路線！`, "fa-users", "text-indigo-400");
+    }
+
+    function updateActiveStationForGroup() {
+      const currentCompleted = groupProgress[currentGroupId];
+      const route = GROUP_ROUTES[currentGroupId];
+      const nextUncompleted = route.find(stationId => !currentCompleted.has(stationId));
+
+      if (nextUncompleted) {
+        currentActiveSpotId = nextUncompleted;
+      } else {
+        currentActiveSpotId = route[route.length - 1];
+      }
+
+      updateTargetMissionCard();
+      updateMapPins();
+      updateProgressBar();
+    }
+
+    function updateTargetMissionCard() {
+      const currentCompleted = groupProgress[currentGroupId];
+      const station = STATIONS.find(s => s.id === currentActiveSpotId);
+      if (!station) return;
+
+      const route = GROUP_ROUTES[currentGroupId];
+      const isAllDone = currentCompleted.size === 6;
+
+      const statusPill = document.getElementById('target-status-pill');
+      const statusLabel = document.getElementById('target-status-label');
+      const btnEnterLabel = document.getElementById('btn-enter-spot-label');
+
+      if (isAllDone) {
+        statusPill.className = "px-3 py-1 rounded-xl bg-amber-100 text-amber-900 font-extrabold text-xs tracking-wider uppercase flex items-center gap-1";
+        statusLabel.textContent = "恭喜全數通關";
+        document.getElementById('current-step-indicator').textContent = "6 / 6 站已完成";
+        document.getElementById('target-spot-name').textContent = "🎉 美感大師榮譽誕生！";
+        document.getElementById('target-mission-prompt').textContent = `太厲害了！第 ${currentGroupId} 組已成功踏遍校園六大藝術角落。可點擊下方回顧各站或開啟榮譽證書！`;
+        btnEnterLabel.textContent = "查看榮譽通關證書";
+      } else {
+        const stepIndex = route.indexOf(station.id) + 1;
+        statusPill.className = "px-3 py-1 rounded-xl bg-teal-100 text-teal-800 font-extrabold text-xs tracking-wider uppercase flex items-center gap-1";
+        statusLabel.textContent = "本組當前推薦關卡";
+        document.getElementById('current-step-indicator').textContent = `第 ${stepIndex} / 6 站`;
+        document.getElementById('target-spot-name').textContent = `${station.id}. ${station.name}`;
+        document.getElementById('target-art-theme').textContent = `藝術主題：${station.theme}`;
+        document.getElementById('target-mission-prompt').textContent = station.observation;
+        btnEnterLabel.textContent = "進入現場解謎挑戰";
+      }
+    }
+
+    function updateProgressBar() {
+      const total = 6;
+      const count = groupProgress[currentGroupId].size;
+      const percent = Math.round((count / total) * 100);
+
+      document.getElementById('progress-text').textContent = `${count} / ${total} 關卡`;
+      document.getElementById('progress-fill').style.width = `${percent}%`;
+      document.getElementById('badges-count').textContent = `${count} / ${total}`;
+
+      renderBadges();
+
+      if (count === 6) {
+        setTimeout(() => {
+          document.getElementById('victory-group-name').textContent = `第 ${currentGroupId} 組`;
+          openModal('modal-victory');
+          triggerVictoryConfetti();
+          playSuccessSound();
+        }, 400);
+      }
+    }
+
+    function renderBadges() {
+      const container = document.getElementById('badges-container');
+      if (!container) return;
+      container.innerHTML = '';
+      const currentCompleted = groupProgress[currentGroupId];
+
+      STATIONS.forEach(station => {
+        const isDone = currentCompleted.has(station.id);
+        const badge = document.createElement('div');
+        badge.className = `p-3 rounded-2xl border text-center transition-all flex flex-col items-center justify-center cursor-pointer ${
+          isDone 
+            ? 'bg-gradient-to-b from-amber-50 to-amber-100 border-amber-300 text-amber-900 shadow-sm active:scale-95' 
+            : 'bg-slate-50 border-slate-200/80 text-slate-400 opacity-60 hover:opacity-90'
+        }`;
+        badge.onclick = () => openSpotModal(station.id);
+
+        badge.innerHTML = `
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-1.5 ${
+            isDone ? 'bg-amber-400 text-white shadow-xs' : 'bg-slate-200 text-slate-400'
+          }">
+            <i class="fa-solid ${station.badgeIcon}"></i>
+          </div>
+          <span class="text-xs font-bold truncate max-w-full">${station.name}</span>
+          <span class="text-[10px] ${isDone ? 'text-amber-700 font-extrabold' : 'text-slate-400'}">
+            ${isDone ? '✓ 已解鎖' : '未解鎖'}
+          </span>
+        `;
+        container.appendChild(badge);
+      });
+    }
+
+    function updateMapPins() {
+      const currentCompleted = groupProgress[currentGroupId];
+      const isAllDone = currentCompleted.size === 6;
+
+      for (let i = 1; i <= 6; i++) {
+        const pinPulse = document.getElementById(`pin-pulse-${i}`);
+        const badgeText = document.getElementById(`pin-badge-${i}`);
+        const pinBody = document.getElementById(`pin-body-${i}`);
+        const isDone = currentCompleted.has(i);
+        const isTarget = (!isAllDone && i === currentActiveSpotId);
+
+        if (badgeText) {
+          if (isDone) {
+            badgeText.textContent = "✓";
+          } else if (isTarget) {
+            badgeText.textContent = i;
+          } else {
+            badgeText.textContent = "🔒";
+          }
+        }
+
+        if (pinBody) {
+          if (isDone) {
+            pinBody.setAttribute('fill', '#10B981');
+            pinBody.setAttribute('opacity', '1');
+          } else if (isTarget) {
+            const defaultColors = { 1: '#F59E0B', 2: '#3B82F6', 3: '#10B981', 4: '#6366F1', 5: '#F43F5E', 6: '#0D9488' };
+            pinBody.setAttribute('fill', defaultColors[i]);
+            pinBody.setAttribute('opacity', '1');
+          } else {
+            pinBody.setAttribute('fill', '#94A3B8');
+            pinBody.setAttribute('opacity', '0.65');
+          }
+        }
+
+        if (pinPulse) {
+          if (isTarget) {
+            pinPulse.classList.remove('hidden');
+          } else {
+            pinPulse.classList.add('hidden');
+          }
+        }
+      }
+    }
+
+    function openSpotModal(spotId) {
+      playNoticeSound();
+      const currentCompleted = groupProgress[currentGroupId];
+      const isDone = currentCompleted.has(spotId);
+      const isCurrentTarget = (spotId === currentActiveSpotId);
+
+      // Strict Sequential Progression Check
+      if (!isDone && !isCurrentTarget) {
+        const targetStation = STATIONS.find(s => s.id === currentActiveSpotId);
+        showToast(`🚫 關卡鎖定！請依順序先完成【第 ${targetStation.id} 關：${targetStation.name}】！`, "fa-lock", "text-amber-400");
+        return;
+      }
+
+      if (currentCompleted.size === 6 && isDone && !document.getElementById('modal-puzzle').classList.contains('hidden')) {
+        openModal('modal-victory');
+        return;
+      }
+
+      const station = STATIONS.find(s => s.id === spotId);
+      if (!station) return;
+
+      currentStationModalId = spotId;
+      isReviewMode = isDone;
+
+      if (!isReviewMode) {
+        currentQuestionIdx = 0;
+        stationLives = 3;
+      }
+
+      renderStationModalUI(station);
+      openModal('modal-puzzle');
+    }
+
+    function renderStationModalUI(station) {
+      document.getElementById('puzzle-spot-number').textContent = station.id;
+      document.getElementById('puzzle-spot-title').textContent = `${station.id}. ${station.name}`;
+      document.getElementById('puzzle-spot-sub').textContent = `美學主題：${station.theme}`;
+      document.getElementById('puzzle-observation-text').textContent = station.observation;
+
+      const substepBadge = document.getElementById('puzzle-substep-badge');
+      const livesContainer = document.getElementById('puzzle-lives-container');
+      const feedbackBox = document.getElementById('puzzle-feedback-box');
+      const nextBtn = document.getElementById('btn-next-mission');
+      const nextBtnText = document.getElementById('btn-next-mission-text');
+      const optionsContainer = document.getElementById('puzzle-options-container');
+      const questionTextEl = document.getElementById('puzzle-question-text');
+
+      feedbackBox.classList.add('hidden');
+      nextBtn.classList.add('hidden');
+      optionsContainer.innerHTML = '';
+
+      if (isReviewMode) {
+        substepBadge.textContent = "已通關（溫故知新模式）";
+        livesContainer.innerHTML = "❤️❤️❤️";
+        questionTextEl.textContent = `恭喜全組已完成【${station.name}】的 3 道現場藝術探查題！`;
+
+        station.questions.forEach((q) => {
+          const qBlock = document.createElement('div');
+          qBlock.className = "p-3.5 bg-slate-50 border border-slate-200 rounded-2xl mb-3";
+          qBlock.innerHTML = `
+            <div class="text-xs font-black text-teal-800 mb-1">${q.title}</div>
+            <div class="text-xs text-slate-700 font-bold mb-2">${q.prompt}</div>
+            <div class="p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl text-xs text-emerald-950 font-bold">
+              ✓ 正確解謎：${q.options.find(o => o.correct).text}
+            </div>
+            <div class="mt-2 text-[11px] text-slate-500">🎨 美感小錦囊：${q.artTip}</div>
+          `;
+          optionsContainer.appendChild(qBlock);
+        });
+
+        nextBtnText.textContent = "返回探索地圖";
+        nextBtn.classList.remove('hidden');
+        return;
+      }
+
+      // Active Challenge Mode
+      substepBadge.textContent = `第 ${currentQuestionIdx + 1} / 3 題`;
+      updateLivesDisplay();
+
+      const currentQ = station.questions[currentQuestionIdx];
+      questionTextEl.textContent = `${currentQ.title}：${currentQ.prompt}`;
+
+      // Randomize the 4 options using Fisher-Yates shuffle to prevent fixed answer positions
+      const shuffledOptions = shuffleArray(currentQ.options);
+
+      shuffledOptions.forEach((opt, idx) => {
+        const optBtn = document.createElement('button');
+        optBtn.className = "w-full text-left p-4 rounded-2xl border-2 border-slate-200 bg-white hover:bg-teal-50/60 hover:border-teal-400 active:bg-teal-100 transition-all font-semibold text-slate-800 text-sm sm:text-base flex items-start gap-3 shadow-2xs cursor-pointer";
+        optBtn.innerHTML = `
+          <span class="w-7 h-7 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5">
+            ${String.fromCharCode(65 + idx)}
+          </span>
+          <span class="flex-1">${opt.text}</span>
+        `;
+        optBtn.addEventListener('click', () => handleOptionSelected(opt, station, optBtn));
+        optionsContainer.appendChild(optBtn);
+      });
+    }
+
+    function updateLivesDisplay() {
+      const container = document.getElementById('puzzle-lives-container');
+      if (!container) return;
+      let heartsHtml = '';
+      for (let i = 0; i < 3; i++) {
+        heartsHtml += (i < stationLives) ? '❤️' : '💔';
+      }
+      container.innerHTML = heartsHtml;
+    }
+
+    function handleOptionSelected(selectedOption, station, clickedBtn) {
+      const feedbackBox = document.getElementById('puzzle-feedback-box');
+      const feedbackTitle = document.getElementById('feedback-title');
+      const feedbackExplanation = document.getElementById('feedback-explanation');
+      const feedbackArtTip = document.getElementById('feedback-art-tip');
+      const nextBtn = document.getElementById('btn-next-mission');
+      const nextBtnText = document.getElementById('btn-next-mission-text');
+      const currentQ = station.questions[currentQuestionIdx];
+
+      feedbackBox.classList.remove('hidden');
+
+      if (selectedOption.correct) {
+        playSuccessSound();
+        feedbackBox.className = "rounded-2xl p-4 border bg-emerald-50 border-emerald-300 text-emerald-950 transition-all";
+        clickedBtn.className = "w-full text-left p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-50 ring-2 ring-emerald-300 text-emerald-950 font-bold text-sm sm:text-base flex items-start gap-3 shadow-2xs pointer-events-none";
+
+        if (currentQuestionIdx < 2) {
+          feedbackTitle.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600 text-xl"></i> <span class="text-base text-emerald-900 font-black">第 ${currentQuestionIdx + 1} 題答對了！</span>`;
+          feedbackExplanation.textContent = currentQ.explanation;
+          feedbackArtTip.textContent = currentQ.artTip;
+          nextBtnText.textContent = `前進下一題 (${currentQuestionIdx + 2}/3)`;
+          nextBtn.classList.remove('hidden');
+        } else {
+          groupProgress[currentGroupId].add(station.id);
+          feedbackTitle.innerHTML = `<i class="fa-solid fa-trophy text-amber-500 text-xl"></i> <span class="text-base text-emerald-900 font-black">太厲害了！全組成功通過【${station.name}】3大實景挑戰！</span>`;
+          feedbackExplanation.textContent = `恭喜獲得【${station.theme}】美學榮譽徽章！`;
+          feedbackArtTip.textContent = currentQ.artTip;
+          nextBtnText.textContent = "解鎖下一關卡 ➔";
+          nextBtn.classList.remove('hidden');
+          
+          updateProgressBar();
+          updateMapPins();
+        }
+      } else {
+        playNoticeSound();
+        stationLives--;
+        updateLivesDisplay();
+
+        clickedBtn.classList.add('border-rose-400', 'bg-rose-50', 'pointer-events-none');
+
+        if (stationLives > 0) {
+          feedbackBox.className = "rounded-2xl p-4 border bg-rose-50 border-rose-200 text-rose-950 transition-all";
+          feedbackTitle.innerHTML = `<i class="fa-solid fa-circle-xmark text-rose-500 text-xl"></i> <span class="text-base text-rose-900 font-black">答案不正確！（剩餘 ${stationLives} 次機會）</span>`;
+          feedbackExplanation.textContent = "提示：請全組暫停盲目猜測！抬起頭仔細觀察現場實物真正的形狀、材質與色彩對比，討論後再選一次！";
+          feedbackArtTip.textContent = currentQ.artTip;
+        } else {
+          feedbackBox.className = "rounded-2xl p-4 border bg-rose-100 border-rose-400 text-rose-950 transition-all";
+          feedbackTitle.innerHTML = `<i class="fa-solid fa-ban text-rose-600 text-2xl"></i> <span class="text-base text-rose-950 font-black">3次機會已用完！啟動防猜題保護機制</span>`;
+          feedbackExplanation.textContent = "【實地任務重啟】：為了落實現場真實觀察，本關將重置。請全組再次走至現場確認細節、互相討論確認答案後再重新挑戰！";
+          feedbackArtTip.textContent = "藝術貴在親身體會與觀察，請勿隨意猜測選項喔！";
+          
+          nextBtnText.textContent = "🔄 重新開始挑戰本關";
+          nextBtn.classList.remove('hidden');
+        }
+      }
+    }
+
+    function handleNextStepAction() {
+      const station = STATIONS.find(s => s.id === currentStationModalId);
+      if (!station) return;
+
+      if (isReviewMode) {
+        closeModal('modal-puzzle');
+        return;
+      }
+
+      if (stationLives <= 0) {
+        currentQuestionIdx = 0;
+        stationLives = 3;
+        renderStationModalUI(station);
+        showToast("已重新開啟本關挑戰，請全組仔細作答！", "fa-rotate-right", "text-amber-400");
+        return;
+      }
+
+      if (currentQuestionIdx < 2) {
+        currentQuestionIdx++;
+        renderStationModalUI(station);
+      } else {
+        closeModal('modal-puzzle');
+        updateActiveStationForGroup();
+        showToast(`恭喜解鎖下一關卡！`, "fa-unlock-keyhole", "text-emerald-400");
+      }
+    }
+
+    function renderItineraryModal() {
+      document.getElementById('itinerary-modal-title').textContent = `第 ${currentGroupId} 組專屬探索路線`;
+      const container = document.getElementById('itinerary-steps-list');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const currentCompleted = groupProgress[currentGroupId];
+      const route = GROUP_ROUTES[currentGroupId];
+
+      route.forEach((stationId, index) => {
+        const station = STATIONS.find(s => s.id === stationId);
+        const isDone = currentCompleted.has(station.id);
+        const isCurrent = (station.id === currentActiveSpotId);
+        const isLocked = !isDone && !isCurrent;
+
+        const stepItem = document.createElement('div');
+        stepItem.className = `p-3.5 rounded-2xl border flex items-center justify-between transition-all cursor-pointer active:scale-98 ${
+          isCurrent 
+            ? 'bg-teal-50 border-teal-400 ring-2 ring-teal-200' 
+            : isDone 
+              ? 'bg-slate-50 border-slate-200 opacity-90 hover:bg-slate-100' 
+              : 'bg-slate-100/70 border-slate-200 text-slate-400 opacity-60'
+        }`;
+        
+        stepItem.onclick = () => {
+          if (isLocked) {
+            showToast(`🚫 關卡鎖定！請依順序先完成前置關卡！`, "fa-lock", "text-amber-400");
+            playNoticeSound();
+            return;
+          }
+          closeModal('modal-itinerary');
+          openSpotModal(station.id);
+        };
+
+        stepItem.innerHTML = `
+          <div class="flex items-center gap-3">
+            <span class="w-8 h-8 rounded-xl font-black text-sm flex items-center justify-center ${
+              isDone 
+                ? 'bg-emerald-500 text-white' 
+                : isCurrent 
+                  ? 'bg-teal-600 text-white' 
+                  : 'bg-slate-300 text-slate-500'
+            }">
+              ${isDone ? '✓' : isCurrent ? index + 1 : '🔒'}
+            </span>
+            <div>
+              <div class="font-extrabold ${isLocked ? 'text-slate-500' : 'text-slate-900'} text-sm flex items-center gap-1.5">
+                <span>${station.name}</span>
+                ${isCurrent ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-teal-200 text-teal-900 font-bold">推薦進行</span>' : ''}
+              </div>
+              <div class="text-xs text-slate-400">${station.theme}</div>
+            </div>
+          </div>
+          <div>
+            ${
+              isDone 
+                ? '<span class="text-xs font-bold text-emerald-600 bg-emerald-100/60 px-2 py-0.5 rounded-md">已通過</span>' 
+                : isCurrent 
+                  ? '<span class="text-xs font-black text-teal-700 bg-teal-100 px-2 py-0.5 rounded-md">進行中</span>' 
+                  : '<span class="text-xs font-bold text-slate-400 bg-slate-200/70 px-2 py-0.5 rounded-md">未解鎖 🔒</span>'
+            }
+          </div>
+        `;
+        container.appendChild(stepItem);
+      });
+    }
+
+    function triggerVictoryConfetti() {
+      if (typeof confetti === 'function') {
+        const count = 220;
+        const defaults = { origin: { y: 0.7 } };
+
+        function fire(particleRatio, opts) {
+          confetti(Object.assign({}, defaults, opts, {
+            particleCount: Math.floor(count * particleRatio)
+          }));
+        }
+
+        fire(0.25, { spread: 26, startVelocity: 55 });
+        fire(0.2, { spread: 60 });
+        fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+        fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+        fire(0.1, { spread: 120, startVelocity: 45 });
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initGroupButtons();
+      renderBadges();
+      updateActiveStationForGroup();
+      setupDynamicQRCode();
+      
+      const unlockAudio = () => {
+        if (window.Tone && Tone.context.state !== 'running') {
+          Tone.start().catch(() => {});
+        }
+        window.removeEventListener('click', unlockAudio);
+        window.removeEventListener('touchstart', unlockAudio);
+      };
+      window.addEventListener('click', unlockAudio);
+      window.addEventListener('touchstart', unlockAudio);
+    });
+  </script>
+</body>
+</html>
